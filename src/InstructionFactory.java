@@ -1,5 +1,9 @@
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.rmi.server.ExportException;
+import java.time.chrono.IsoChronology;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Optional;
 
 public class InstructionFactory<Instr extends Instruction> implements InstructionFactoryInterface{
@@ -44,7 +48,82 @@ public class InstructionFactory<Instr extends Instruction> implements Instructio
         }
     }
 
+    @Override
     public int getOpcodeMaskAccuracy() {
         return Integer.bitCount(opcodeMask);
+    }
+
+    private static Optional<ArrayList<InstructionFactoryInterface>> factoriesByIndex = Optional.empty();
+    private static Optional<HashMap<String, InstructionFactoryInterface>> factoriesByMnemonic = Optional.empty();
+
+    public static ArrayList<InstructionFactoryInterface> factoriesByIndex() throws Exception {
+        if(factoriesByIndex.isPresent()) {
+            return factoriesByIndex.get();
+        }
+        setupFactories();
+        return factoriesByIndex.get();
+    }
+
+    public static HashMap<String, InstructionFactoryInterface> factoriesByMnemonic() throws Exception {
+        if(factoriesByMnemonic.isPresent()) {
+            return factoriesByMnemonic.get();
+        }
+        setupFactories();
+        return factoriesByMnemonic.get();
+    }
+
+    @Override
+    public String getMnemonic() {
+        return mnemonic;
+    }
+
+    @Override
+    public short getOpcode() {
+        return (short)opcodeValue;
+    }
+
+    private static void setupFactories() throws Exception {
+        ArrayList<InstructionFactoryInterface> factoriesList = new ArrayList<>() {
+            {
+                add(new InstructionFactory<>(InstructionSet.Call.class));
+                add(new InstructionFactory<>(InstructionSet.Return.class));
+                add(new InstructionFactory<>(InstructionSet.Jump.class));
+                add(new InstructionFactory<>(InstructionSet.CallWordPtr.class));
+                add(new InstructionFactory<>(InstructionSet.SkipEqualImm.class));
+                add(new InstructionFactory<>(InstructionSet.SkipNotEqualImm.class));
+                add(new InstructionFactory<>(InstructionSet.SkipEqualReg.class));
+                add(new InstructionFactory<>(InstructionSet.LoadImm.class));
+                add(new InstructionFactory<>(InstructionSet.AddImm.class));
+                add(new InstructionFactory<>(InstructionSet.Mov.class));
+                add(new InstructionFactory<>(InstructionSet.Or.class));
+                add(new InstructionFactory<>(InstructionSet.And.class));
+                add(new InstructionFactory<>(InstructionSet.Xor.class));
+                add(new InstructionFactory<>(InstructionSet.Add.class));
+                add(new InstructionFactory<>(InstructionSet.Sub.class));
+                add(new InstructionFactory<>(InstructionSet.RShift1.class));
+                add(new InstructionFactory<>(InstructionSet.SubR.class));
+                add(new InstructionFactory<>(InstructionSet.LShift1.class));
+                add(new InstructionFactory<>(InstructionSet.SkipNotEqualReg.class));
+                add(new InstructionFactory<>(InstructionSet.LoadRegI.class));
+                add(new InstructionFactory<>(InstructionSet.BreachRelv0.class));
+                add(new InstructionFactory<>(InstructionSet.Rand.class));
+                add(new InstructionFactory<>(InstructionSet.DisplayClear.class));
+                add(new InstructionFactory<>(InstructionSet.GetDelayTimerCounter.class));
+                add(new InstructionFactory<>(InstructionSet.SetDelayTimerCounter.class));
+                add(new InstructionFactory<>(InstructionSet.SetSoundTimerCounter.class));
+                add(new InstructionFactory<>(InstructionSet.AddRegI.class));
+                add(new InstructionFactory<>(InstructionSet.StoreBCD.class));
+                add(new InstructionFactory<>(InstructionSet.RegDump.class));
+                add(new InstructionFactory<>(InstructionSet.RegLoad.class));
+                add(new InstructionFactory<>(InstructionSet.DrawSprite.class));
+            }
+        };
+        HashMap<String, InstructionFactoryInterface> factoriesHashMap = new HashMap<>();
+        factoriesList.forEach(
+                factory -> factoriesHashMap.put(factory.getMnemonic(), factory)
+        );
+        factoriesList.sort((a, b) -> b.getOpcodeMaskAccuracy() - a.getOpcodeMaskAccuracy());
+        factoriesByMnemonic = Optional.of(factoriesHashMap);
+        factoriesByIndex = Optional.of(factoriesList);
     }
 }

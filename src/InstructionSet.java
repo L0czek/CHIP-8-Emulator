@@ -1,5 +1,5 @@
 public class InstructionSet {
-    public static class Call extends InstructionTypes.Type_NNN implements Instruction {
+    public static class Call extends InstructionTypes.Type_NNN implements Instruction{
         public Call(short opcode) {
             super(opcode);
         }
@@ -33,6 +33,14 @@ public class InstructionSet {
     }
 
     public static class Return extends InstructionTypes.Type_NoArg implements Instruction {
+        public Return(short opcode) {
+
+        }
+
+        public Return(String[] assemblyArgs) {
+
+        }
+
         @Override
         public void execute(VirtualMachineState state) {
             state.returnFromSubroutine();
@@ -143,7 +151,7 @@ public class InstructionSet {
 
         @Override
         public String disassemble() {
-            return String.format("%s v%d, 0x%X\n", getMnemonic(), getValueX(), getValueNN());
+            return String.format("%s v%d, 0x%X\n", getMnemonic(), getValueX(), 0xff & getValueNN());
         }
 
         @Override
@@ -179,7 +187,7 @@ public class InstructionSet {
 
         @Override
         public String disassemble() {
-            return String.format("%s v%d, 0x%X\n", getMnemonic(), getValueX(), getValueNN());
+            return String.format("%s v%d, 0x%X\n", getMnemonic(), getValueX(), 0xff & getValueNN());
         }
         @Override
         public short assemble() {
@@ -242,12 +250,12 @@ public class InstructionSet {
 
         @Override
         public void execute(VirtualMachineState state) {
-            state.setReg(getValueX(), getValueNN());
+            state.setReg(getValueX(), 0xff & getValueNN());
         }
 
         @Override
         public String disassemble() {
-            return String.format("%s v%d, 0x%X\n", getMnemonic(), getValueX(), getValueNN());
+            return String.format("%s v%d, 0x%X\n", getMnemonic(), getValueX(), 0xff & getValueNN());
         }
         @Override
         public short assemble() {
@@ -274,12 +282,12 @@ public class InstructionSet {
 
         @Override
         public void execute(VirtualMachineState state) {
-            state.setReg(getValueX(), (byte)(state.getReg(getValueX()) + getValueNN()));
+            state.setReg(getValueX(), (byte)(state.getReg(getValueX()) + 0xff & getValueNN()));
         }
 
         @Override
         public String disassemble() {
-            return String.format("%s v%d, 0x%X\n", getMnemonic(), getValueX(), getValueNN());
+            return String.format("%s v%d, 0x%X\n", getMnemonic(), getValueX(), 0xff & getValueNN());
         }
 
         @Override
@@ -718,12 +726,12 @@ public class InstructionSet {
 
         @Override
         public void execute(VirtualMachineState state) {
-            state.setReg(getValueX(), (int)(Math.random() * 0x100) & getValueNN());
+            state.setReg(getValueX(), (int)(Math.random() * 0x100) & 0xff & getValueNN());
         }
 
         @Override
         public String disassemble() {
-            return String.format("%s v%d, 0x%X\n", getMnemonic(), getValueX(), getValueNN());
+            return String.format("%s v%d, 0x%X\n", getMnemonic(), getValueX(), 0xff & getValueNN());
         }
 
         @Override
@@ -741,6 +749,14 @@ public class InstructionSet {
     }
 
     public static class DisplayClear extends InstructionTypes.Type_NoArg implements Instruction {
+        public DisplayClear(short opcode) {
+
+        }
+
+        public DisplayClear(String[] assemblyArgs) {
+
+        }
+
         @Override
         public void execute(VirtualMachineState state) {
             state.clearScreen();

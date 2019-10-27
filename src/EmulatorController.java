@@ -11,7 +11,7 @@ public class EmulatorController implements ControllerInterface {
     }
 
     private Optional<SendTextEvent> viewErrorEvent;
-    private Optional<SendTextEvent> setAssemblyEvent;
+    private Optional<SendTextEvent> viewSetAssemblyEvent;
 
     private Optional<SendTextEvent> modelLoadAssemblyEvent;
     private Optional<SendTextEvent> modelLoadByteCodeEvent;
@@ -19,7 +19,7 @@ public class EmulatorController implements ControllerInterface {
 
     public EmulatorController() {
         viewErrorEvent = Optional.empty();
-        setAssemblyEvent = Optional.empty();
+        viewSetAssemblyEvent = Optional.empty();
         modelLoadAssemblyEvent = Optional.empty();
         modelLoadByteCodeEvent = Optional.empty();
         modelGetAssemblyEvent = Optional.empty();
@@ -33,7 +33,7 @@ public class EmulatorController implements ControllerInterface {
             if(assembly.isEmpty()) {
                 viewErrorEvent.ifPresent(event -> event.send("Cannot read assembly file"));
             } else {
-                setAssemblyEvent.ifPresent(event -> event.send(assembly.get()));
+                viewSetAssemblyEvent.ifPresent(event -> event.send(assembly.get()));
             }
         } else {
             viewErrorEvent.ifPresent(event -> event.send("No model was provided to controller"));
@@ -43,7 +43,26 @@ public class EmulatorController implements ControllerInterface {
 
     @Override
     public void loadByteCodeFromFile(String path) {
-        System.out.println(path);
+        if(modelLoadByteCodeEvent.isPresent()) {
+            modelLoadByteCodeEvent.get().send(path);
+            var assembly = modelGetAssemblyEvent.get().send();
+            if(assembly.isPresent()) {
+                viewSetAssemblyEvent.ifPresent(event -> event.send(assembly.get()));
+            } else {
+                viewErrorEvent.ifPresent(event -> event.send("Error while disassembling"));
+            }
+        }
+
+    }
+
+    @Override
+    public void saveAssemblyToFile(String path) {
+
+    }
+
+    @Override
+    public void saveByteCodeToFile(String path) {
+
     }
 
     @Override
@@ -55,7 +74,7 @@ public class EmulatorController implements ControllerInterface {
     @Override
     public void setupEventHandlers(ViewInterface view) {
         viewErrorEvent = Optional.of(view::reportError);
-        setAssemblyEvent = Optional.of(view::setAssembly);
+        viewSetAssemblyEvent = Optional.of(view::setAssembly);
     }
 
     @Override

@@ -1,15 +1,19 @@
 import java.lang.reflect.InvocationTargetException;
 
 public class MainClass {
+
     public static void main(String[] argv) {
-        InstructionSet.Call call = new InstructionSet.Call((short)0x123);
-
-
         try {
-            InstructionFactory<InstructionSet.Jump> factory = new InstructionFactory<>(InstructionSet.Jump.class);
-            var i = factory.fromAssembly(new String[]{"jmp", "123"});
-            System.out.println(i.get().disassemble());
+            var asm = new Assembler(InstructionFactory.factoriesByMnemonic());
+            var dis = new Disassembler(InstructionFactory.factoriesByIndex());
+            System.out.println(dis.tryDisassemble(asm.generateByteCode(
+                    "# 0: #jmp 0x123\n"+
+                    "callptr 12\n"+
+                            "db 0xff\n"+
+                    "li v0, 1\n"
+            )));
         }catch(Exception e ) {
+            System.out.println("got exception");
             System.out.println(e.getMessage());
         }
         new Application(

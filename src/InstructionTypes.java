@@ -49,7 +49,7 @@ public class InstructionTypes {
         }
 
         public static int getOpcodeMask() {
-            return 0x0FFF;
+            return 0xf000;
         }
     }
 
@@ -87,7 +87,7 @@ public class InstructionTypes {
         }
 
         public static int getOpcodeMask() {
-            return 0x0FFF;
+            return 0xF000;
         }
     }
 
@@ -124,7 +124,7 @@ public class InstructionTypes {
         }
 
         public static int getOpcodeMask() {
-            return 0x0FF0;
+            return 0xF00F;
         }
     }
 
@@ -151,7 +151,7 @@ public class InstructionTypes {
         }
 
         public static int getOpcodeMask() {
-            return 0x0F00;
+            return 0xF0FF;
         }
     }
 
@@ -205,7 +205,7 @@ public class InstructionTypes {
         }
 
         public static int getOpcodeMask() {
-            return 0x0FFF;
+            return 0xF000;
         }
     }
 }
