@@ -1,7 +1,5 @@
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.rmi.server.ExportException;
-import java.time.chrono.IsoChronology;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Optional;
@@ -83,7 +81,7 @@ public class InstructionFactory<Instr extends Instruction> implements Instructio
     }
 
     private static void setupFactories() throws Exception {
-        ArrayList<InstructionFactoryInterface> factoriesList = new ArrayList<>() {
+        ArrayList<InstructionFactoryInterface> factoriesList = new ArrayList<InstructionFactoryInterface>() {
             {
                 add(new InstructionFactory<>(InstructionSet.Call.class));
                 add(new InstructionFactory<>(InstructionSet.Return.class));
@@ -105,7 +103,7 @@ public class InstructionFactory<Instr extends Instruction> implements Instructio
                 add(new InstructionFactory<>(InstructionSet.LShift1.class));
                 add(new InstructionFactory<>(InstructionSet.SkipNotEqualReg.class));
                 add(new InstructionFactory<>(InstructionSet.LoadRegI.class));
-                add(new InstructionFactory<>(InstructionSet.BreachRelv0.class));
+                add(new InstructionFactory<>(InstructionSet.BranchRelv0.class));
                 add(new InstructionFactory<>(InstructionSet.Rand.class));
                 add(new InstructionFactory<>(InstructionSet.DisplayClear.class));
                 add(new InstructionFactory<>(InstructionSet.GetDelayTimerCounter.class));

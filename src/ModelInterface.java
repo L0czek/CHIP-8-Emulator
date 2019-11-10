@@ -1,10 +1,20 @@
-import java.util.Optional;
+import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 
 public interface ModelInterface {
-    void loadAssemblyFromFile(String path);
-    void loadByteCodeFromFile(String path);
-    void saveAssemblyToFile(String path, String assembly);
-    void saveByteCodeToFile(String path);
+    String loadAssemblyFromFile(String path) throws IOException;
+    String loadByteCodeFromFile(String path) throws IOException;
+    void saveAssemblyToFile(String path, String assembly) throws IOException;
+    void saveByteCodeToFile(String path, String assembly) throws Assembler.AssemblerException, IOException;
 
-    Optional<String> getAssembly();
+    String recompileAsCode(int linen, String assembly) throws Assembler.AssemblerException;
+    String recompileAsData(int linen, String assembly) throws Assembler.AssemblerException;
+    void startEmulation(String assembly) throws Assembler.AssemblerException;
+    void executeOpcode();
+    void setRegisterValue(Registers r, int value);
+    int getRegisterValue(Registers r);
+    void keyPressed(KeyEvent keyEvent);
+    BufferedImage getScreen();
+
 }

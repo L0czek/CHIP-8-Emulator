@@ -1,86 +1,180 @@
+import java.awt.*;
+import java.io.IOException;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class EmulatorController implements ControllerInterface {
 
-    interface SendTextEvent {
-        void send(String msg);
-    }
-
-    interface GetTextEvent {
-        Optional<String> send();
-    }
-
-    private Optional<SendTextEvent> viewErrorEvent;
-    private Optional<SendTextEvent> viewSetAssemblyEvent;
-
-    private Optional<SendTextEvent> modelLoadAssemblyEvent;
-    private Optional<SendTextEvent> modelLoadByteCodeEvent;
-    private Optional<GetTextEvent> modelGetAssemblyEvent;
+    private Optional<Events.ViewForController> viewEvents = Optional.empty();
+    private Optional<Events.ModelForController> modelEvents = Optional.empty();
+    private ExecutorService taskPool;
 
     public EmulatorController() {
-        viewErrorEvent = Optional.empty();
-        viewSetAssemblyEvent = Optional.empty();
-        modelLoadAssemblyEvent = Optional.empty();
-        modelLoadByteCodeEvent = Optional.empty();
-        modelGetAssemblyEvent = Optional.empty();
+        taskPool = Executors.newFixedThreadPool(1);
+    }
+
+    private void markAsCodeImpl(int linen) {
+        if(modelEvents.isPresent() && viewEvents.isPresent()) {
+            Events.ViewForController view = viewEvents.get();
+            Events.ModelForController model = modelEvents.get();
+            try {
+                view.sendSetAssemblyEvent(model.sendRecompileAsCode(linen, view.sendGetAssemblyEvent()));
+            } catch (Assembler.AssemblerException error) {
+                view.sendSetStatusTextEvent(error.msg);
+                view.sendSetLineColorEvent(error.linen, Color.RED);
+            }
+        }
+    }
+
+    @Override
+    public void markAsCode(int linen) {
+        taskPool.execute(() -> markAsCodeImpl(linen));
+    }
+
+    private void markAsDataImpl(int linen) {
+        if(modelEvents.isPresent() && viewEvents.isPresent()) {
+            Events.ViewForController view = viewEvents.get();
+            Events.ModelForController model = modelEvents.get();
+            try {
+                view.sendSetAssemblyEvent(model.sendRecompileAsData(linen, view.sendGetAssemblyEvent()));
+            } catch (Assembler.AssemblerException error) {
+                view.sendSetStatusTextEvent(error.msg);
+                view.sendSetLineColorEvent(error.linen, Color.RED);
+            }
+        }
+    }
+
+    @Override
+    public void markAsData(int linen) {
+        taskPool.execute(() -> markAsDataImpl(linen));
+    }
+
+    private void loadAssemblyFromFileImpl(String path) {
+        if(modelEvents.isPresent()) {
+            Events.ModelForController events = modelEvents.get();
+            try {
+                String assembly = events.sendLoadAssemblyFromFileEvent(path);
+                viewEvents.ifPresent(e -> e.sendSetAssemblyEvent(assembly));
+            } catch (IOException error) {
+                viewEvents.ifPresent(e -> e.sendReportErrorEvent("Cannot read bytecode from file" + error.getMessage()));
+            }
+        }
     }
 
     @Override
     public void loadAssemblyFromFile(String path) {
-        if(modelLoadAssemblyEvent.isPresent()) {
-            modelLoadAssemblyEvent.get().send(path);
-            var assembly = modelGetAssemblyEvent.get().send();
-            if(assembly.isEmpty()) {
-                viewErrorEvent.ifPresent(event -> event.send("Cannot read assembly file"));
-            } else {
-                viewSetAssemblyEvent.ifPresent(event -> event.send(assembly.get()));
-            }
-        } else {
-            viewErrorEvent.ifPresent(event -> event.send("No model was provided to controller"));
-        }
+        taskPool.execute(() -> loadAssemblyFromFileImpl(path));
+    }
 
+    private void loadBytecodeFromFileImpl(String path) {
+        if(modelEvents.isPresent()) {
+            Events.ModelForController events = modelEvents.get();
+            try {
+                String assembly = events.sendLoadByteCodeFromFileEvent(path);
+                viewEvents.ifPresent(e -> e.sendSetAssemblyEvent(assembly));
+            } catch (IOException error) {
+                viewEvents.ifPresent(e -> e.sendReportErrorEvent("Cannot read bytecode from file" + error.getMessage()));
+            }
+        }
     }
 
     @Override
     public void loadByteCodeFromFile(String path) {
-        if(modelLoadByteCodeEvent.isPresent()) {
-            modelLoadByteCodeEvent.get().send(path);
-            var assembly = modelGetAssemblyEvent.get().send();
-            if(assembly.isPresent()) {
-                viewSetAssemblyEvent.ifPresent(event -> event.send(assembly.get()));
-            } else {
-                viewErrorEvent.ifPresent(event -> event.send("Error while disassembling"));
+        taskPool.execute(() -> loadBytecodeFromFileImpl(path));
+    }
+
+    private void saveAssemblyToFileImpl(String path) {
+        if(modelEvents.isPresent() && viewEvents.isPresent()) {
+            Events.ModelForController model = modelEvents.get();
+            Events.ViewForController view = viewEvents.get();
+            try {
+                model.sendSaveAssemblyToFileEvent(path, view.sendGetAssemblyEvent());
+            } catch (IOException error) {
+                view.sendReportErrorEvent("Cannot write to file: " + error.getMessage());
             }
         }
-
     }
 
     @Override
     public void saveAssemblyToFile(String path) {
+        taskPool.execute(() -> saveByteCodeToFileImpl(path));
+    }
 
+    private void saveByteCodeToFileImpl(String path) {
+        if(modelEvents.isPresent() && viewEvents.isPresent()) {
+            Events.ModelForController model = modelEvents.get();
+            Events.ViewForController view = viewEvents.get();
+            try {
+                view.sendClearLineColorsEvent();
+                model.sendSaveByteCodeToFileEvent(path, view.sendGetAssemblyEvent());
+            } catch (Assembler.AssemblerException error) {
+                view.sendSetLineColorEvent(error.linen, Color.RED);
+                view.sendSetStatusTextEvent(error.msg);
+            } catch (IOException error) {
+                view.sendReportErrorEvent("Cannot save to file: " + error.getMessage());
+            }
+        }
     }
 
     @Override
     public void saveByteCodeToFile(String path) {
+        taskPool.execute(() -> saveByteCodeToFileImpl(path));
+    }
 
+    @Override
+    public void cont() {
+
+    }
+
+    @Override
+    public void stepIn() {
+
+    }
+
+    @Override
+    public void stepOver() {
+
+    }
+
+    @Override
+    public void stop() {
+        viewEvents.ifPresent(events -> events.sendEnableAssemblerEditingEvent());
+    }
+
+    @Override
+    public void setRegisterValue(Registers r, int value) {
+        System.out.println(String.format("Set %s to %x", r.toString() ,value));
+    }
+
+    private void runEmulationImpl() {
+        if(modelEvents.isPresent() && viewEvents.isPresent()) {
+            Events.ModelForController model = modelEvents.get();
+            Events.ViewForController view = viewEvents.get();
+            view.sendClearLineColorsEvent();
+            try {
+                model.sendStartEmulationEvent(view.sendGetAssemblyEvent());
+                view.sendDisableAssemblerEditingEvent();
+            } catch (Assembler.AssemblerException error) {
+                view.sendSetLineColorEvent(error.linen, Color.RED);
+                view.sendSetStatusTextEvent(error.msg);
+            }
+        }
     }
 
     @Override
     public void runEmulation() {
-        System.out.println("run");
-        viewErrorEvent.ifPresent(event -> event.send("running"));
+        taskPool.execute(this::runEmulationImpl);
     }
 
     @Override
     public void setupEventHandlers(ViewInterface view) {
-        viewErrorEvent = Optional.of(view::reportError);
-        viewSetAssemblyEvent = Optional.of(view::setAssembly);
+        viewEvents = Optional.of(new Events.ViewForController(view));
     }
 
     @Override
     public void setupEventHandlers(ModelInterface model) {
-        modelLoadAssemblyEvent = Optional.of(model::loadAssemblyFromFile);
-        modelLoadByteCodeEvent = Optional.of(model::loadByteCodeFromFile);
-        modelGetAssemblyEvent = Optional.of(model::getAssembly);
+        modelEvents = Optional.of(new Events.ModelForController(model));
     }
+
 }

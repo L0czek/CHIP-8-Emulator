@@ -10,16 +10,15 @@ public class Assembler {
         factories = factories_;
     }
 
-    public ArrayList<Serializable> assembleInstructions(String assembly) throws AssemblerException {
-        var trimmedAssembly = trimComments(assembly);
+    public ArrayList<Serializable> assemble(String assembly, int linen) throws AssemblerException {
         ArrayList<Serializable> result = new ArrayList<>();
-        int linen = 1;
-        for(var line : trimmedAssembly.split("\n")) {
-            var assemblyArgs = line.split("[\\s,]+");
-            if(assemblyArgs.length == 0) {
+        for(String line : assembly.split("\n")) {
+            line = trimComments(line).replaceAll("^[\\s]+", "");
+            if(line.length() == 0) {
                 continue;
             }
-            var mnemonic = assemblyArgs[0];
+            String[] assemblyArgs = line.split("[\\s,]+");
+            String mnemonic = assemblyArgs[0];
             if(mnemonic.equals("db")) {
                 try{
                     result.add(new EmitBytesInstruction(assemblyArgs));
@@ -27,11 +26,15 @@ public class Assembler {
                     throw new AssemblerException(linen, e.getMessage());
                 }
             } else {
-                var assembled = factories.get(mnemonic).fromAssembly(assemblyArgs);
+                Optional<Instruction> assembled;
+                if(!factories.containsKey(mnemonic)) {
+                    throw new AssemblerException(linen, "Invalid mnemonic");
+                }
+                assembled = factories.get(mnemonic).fromAssembly(assemblyArgs);
                 if(assembled.isPresent()) {
                     result.add(assembled.get());
                 } else {
-                    throw new AssemblerException(linen, "failed to match arguments to instruction");
+                    throw new AssemblerException(linen, "Invalid arguments to instruction");
                 }
             }
             ++linen;
@@ -39,9 +42,9 @@ public class Assembler {
         return result;
     }
 
-    public byte[] generateByteCode(String assembly) throws Exception {
+    public byte[] generateByteCode(String assembly, int linen) throws AssemblerException {
         ArrayList<Byte> byteCode = new ArrayList<>();
-        assembleInstructions(assembly).forEach(instruction -> instruction.serialize(byteCode));
+        assemble(assembly, linen).forEach(instruction -> instruction.serialize(byteCode));
         byte[] result = new byte[byteCode.size()];
         for(int i=0; i < byteCode.size(); ++i) {
             result[i] = byteCode.get(i);
@@ -69,6 +72,26 @@ public class Assembler {
             array.addAll(data);
         }
     }
+
+    public String fixOffsets(String assembly) throws AssemblerException {
+        StringBuilder builder = new StringBuilder();
+        int index = 0;
+        int linen = 0;
+        for (String line : assembly.split("\n")) {
+            line = line.replaceAll("^#@[^#]+#","");
+            byte[] compiled = generateByteCode(line, linen++);
+            if(compiled.length == 2) {
+                builder.append(String.format("#@ %04X %04X : %02X %02X #", index, index+0x200, compiled[0], compiled[1]));
+                index += 2;
+            } else if(compiled.length == 1){
+                builder.append(String.format("#@ %04X %04X : %02X    #", index, index+0x200, compiled[0]));
+                index += 1;
+            }
+            builder.append(line).append("\n");
+        }
+        return builder.toString();
+    }
+
     public static class AssemblerException extends Exception {
         int linen;
         String msg;

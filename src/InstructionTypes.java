@@ -182,7 +182,7 @@ public class InstructionTypes {
             }
             valueX = parseRegister(assemblyArgs[1]);
             valueY = parseRegister(assemblyArgs[2]);
-            valueN = parseRegister(assemblyArgs[3]);
+            valueN = parseInt(assemblyArgs[3]);
             if(valueX > 0xf | valueY > 0xf | valueN > 0xf) {
                 throw  new IllegalArgumentException();
             }

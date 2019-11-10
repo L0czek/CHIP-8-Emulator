@@ -23,12 +23,21 @@ public class InstructionSet {
             return (short)getOpcode(getMask());
         }
 
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
+
         public static int getMask() {
             return 0x0000;
         }
 
         public static String getMnemonic() {
             return "call";
+        }
+
+        public int nextIp() {
+            return getValueNNN();
         }
     }
 
@@ -44,6 +53,11 @@ public class InstructionSet {
         @Override
         public void execute(VirtualMachineState state) {
             state.returnFromSubroutine();
+        }
+
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
         }
 
         @Override
@@ -68,6 +82,11 @@ public class InstructionSet {
     public static class Jump extends InstructionTypes.Type_NNN implements Instruction {
         public Jump(short opcode) {
             super(opcode);
+        }
+
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
         }
 
         public Jump(String[] assemblyArgs) {
@@ -102,14 +121,17 @@ public class InstructionSet {
         public CallWordPtr(short opcode) {
             super(opcode);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         public CallWordPtr(String[] assemblyArgs) {
             super(assemblyArgs);
         }
 
         @Override
         public void execute(VirtualMachineState state) {
-            var address = state.memoryGetShort(getValueNNN());
+            int address = state.memoryGetShort(getValueNNN());
             state.callSubroutine(address);
         }
 
@@ -136,14 +158,17 @@ public class InstructionSet {
         public SkipEqualImm(short opcode) {
             super(opcode);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         public SkipEqualImm(String[] assemblyArgs) {
             super(assemblyArgs);
         }
 
         @Override
         public void execute(VirtualMachineState state) {
-            var reg = state.getReg(getValueX());
+            int reg = state.getReg(getValueX());
             if(reg == getValueNN()) {
                 state.skipInstruction();
             }
@@ -176,10 +201,13 @@ public class InstructionSet {
         public SkipNotEqualImm(String[] assemblyArgs) {
             super(assemblyArgs);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         @Override
         public void execute(VirtualMachineState state) {
-            var reg = state.getReg(getValueX());
+            int reg = state.getReg(getValueX());
             if(reg != getValueNN()) {
                 state.skipInstruction();
             }
@@ -211,7 +239,10 @@ public class InstructionSet {
         public SkipEqualReg(String[] assemblyArgs) {
             super(assemblyArgs);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         @Override
         public void execute(VirtualMachineState state) {
             int reg1 = state.getReg(getValueX());
@@ -243,7 +274,10 @@ public class InstructionSet {
         public LoadImm(short opcode) {
             super(opcode);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         public LoadImm(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -275,7 +309,10 @@ public class InstructionSet {
         public AddImm(short opcode) {
             super(opcode);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         public AddImm(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -308,7 +345,10 @@ public class InstructionSet {
         public Mov(short opcode) {
             super(opcode);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         public Mov(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -340,7 +380,10 @@ public class InstructionSet {
         public Or(short opcode) {
             super(opcode);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         public Or(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -372,7 +415,10 @@ public class InstructionSet {
         public And(short opcode) {
             super(opcode);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         public And(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -405,7 +451,10 @@ public class InstructionSet {
         public Xor(short opcode) {
             super(opcode);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         public Xor(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -438,7 +487,10 @@ public class InstructionSet {
         public Add(short opcode) {
             super(opcode);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         public Add(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -480,7 +532,10 @@ public class InstructionSet {
         public Sub(String[] assemblyArgs) {
             super(assemblyArgs);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         @Override
         public void execute(VirtualMachineState state) {
             int result = state.getReg(getValueX()) - state.getReg(getValueY());
@@ -517,7 +572,10 @@ public class InstructionSet {
         public RShift1(String[] assemblyArgs) {
             super(assemblyArgs);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         @Override
         public void execute(VirtualMachineState state) {
             state.setReg(15, state.getReg(getValueX()) & 1);
@@ -547,7 +605,10 @@ public class InstructionSet {
         public SubR(short opcode) {
             super(opcode);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         public SubR(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -584,7 +645,10 @@ public class InstructionSet {
         public LShift1(short opcode) {
             super(opcode);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         public LShift1(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -619,7 +683,10 @@ public class InstructionSet {
         public SkipNotEqualReg(short opcode) {
             super(opcode);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         public SkipNotEqualReg(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -653,7 +720,10 @@ public class InstructionSet {
         public LoadRegI(short opcode) {
             super(opcode);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         public LoadRegI(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -682,15 +752,18 @@ public class InstructionSet {
         }
     }
 
-    public static class BreachRelv0 extends InstructionTypes.Type_NNN implements Instruction {
-        public BreachRelv0(short opcode) {
+    public static class BranchRelv0 extends InstructionTypes.Type_NNN implements Instruction {
+        public BranchRelv0(short opcode) {
             super(opcode);
         }
 
-        public BreachRelv0(String[] assemblyArgs) {
+        public BranchRelv0(String[] assemblyArgs) {
             super(assemblyArgs);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         @Override
         public void execute(VirtualMachineState state) {
             state.jump(state.getReg(0) + getValueNNN());
@@ -719,7 +792,10 @@ public class InstructionSet {
         public Rand(short opcode) {
             super(opcode);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         public Rand(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -756,7 +832,10 @@ public class InstructionSet {
         public DisplayClear(String[] assemblyArgs) {
 
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         @Override
         public void execute(VirtualMachineState state) {
             state.clearScreen();
@@ -789,7 +868,10 @@ public class InstructionSet {
         public GetDelayTimerCounter(String[] assemblyArgs) {
             super(assemblyArgs);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         @Override
         public void execute(VirtualMachineState state) {
             state.setReg(getValueX(), state.getDelayTimerCounter());
@@ -818,7 +900,10 @@ public class InstructionSet {
         public SetDelayTimerCounter(short opcode) {
             super(opcode);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         public SetDelayTimerCounter(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -854,7 +939,10 @@ public class InstructionSet {
         public SetSoundTimerCounter(String[] assemblyArgs) {
             super(assemblyArgs);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         @Override
         public void execute(VirtualMachineState state) {
             state.setSoundTimerCounter(state.getReg(getValueX()));
@@ -882,7 +970,10 @@ public class InstructionSet {
         public AddRegI(short opcode) {
             super(opcode);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         public AddRegI(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -914,15 +1005,18 @@ public class InstructionSet {
         public StoreBCD(short opcode) {
             super(opcode);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         public StoreBCD(String[] assemblyArgs) {
             super(assemblyArgs);
         }
 
         @Override
         public void execute(VirtualMachineState state) {
-            var value = state.getReg(getValueX());
-            var address = state.getRegI();
+            int value = state.getReg(getValueX());
+            int address = state.getRegI();
             state.memorySetByte(address + 0, (byte)((value / 100) & 0xff));
             state.memorySetByte(address + 1, (byte)(((value / 10) % 10) & 0xff));
             state.memorySetByte(address + 2, (byte)((value % 10) & 0xff));
@@ -954,11 +1048,14 @@ public class InstructionSet {
         public RegDump(String[] assemblyArgs) {
             super(assemblyArgs);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         @Override
         public void execute(VirtualMachineState state) {
-            var address = state.getRegI();
-            var end = getValueX();
+            int address = state.getRegI();
+            int end = getValueX();
             for(int i=0; i < end; ++i) {
                 state.memorySetByte(address + i, (byte)(0xff & state.getReg(i)));
             }
@@ -986,15 +1083,18 @@ public class InstructionSet {
         public RegLoad(short opcode) {
             super(opcode);
         }
-
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
         public RegLoad(String[] assemblyArgs) {
             super(assemblyArgs);
         }
 
         @Override
         public void execute(VirtualMachineState state) {
-            var address = state.getRegI();
-            var end = getValueX();
+            int address = state.getRegI();
+            int end = getValueX();
             for(int i=0; i < end; ++i) {
                 state.setReg(i, state.memoryGetByte(address + i) & 0xff);
             }
@@ -1022,6 +1122,10 @@ public class InstructionSet {
         public DrawSprite(short opcode) {
             super(opcode);
         }
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
 
         public DrawSprite(String[] assemblyArgs) {
             super(assemblyArgs);
@@ -1029,15 +1133,15 @@ public class InstructionSet {
 
         @Override
         public void execute(VirtualMachineState state) {
-            var x = state.getReg(getValueX());
-            var y = state.getReg(getValueY());
-            var n = getValueN();
-            var address = state.getRegI();
+            int x = state.getReg(getValueX());
+            int y = state.getReg(getValueY());
+            int n = getValueN();
+            int address = state.getRegI();
             boolean flipped = false;
             for(int i=0; i < n; ++i) {
-                var sprite = state.memoryGetByte(address + i);
+                int sprite = state.memoryGetByte(address + i);
                 for(int j=0; j < 8; ++j) {
-                    var bit = (sprite >> (7-j)) & 1;
+                    int bit = (sprite >> (7-j)) & 1;
                     if(bit != 0 && state.getPixel(x + j, y) == 0xffffff) {
                         flipped = true;
                     }

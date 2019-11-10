@@ -1,29 +1,17 @@
 import javax.swing.*;
+import javax.swing.text.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Optional;
 
 public final class EmulatorView extends JFrame implements ViewInterface  {
     private Menu menu = null;
+    private JLabel status = null;
     private AssemblyView assemblyView = null;
-    private DebugerView debugView = null;
-
-    interface FileEvent {
-        void send(String text);
-    }
-
-    interface EmulationRunEvent {
-        void send();
-    }
-
-    private Optional<FileEvent> loadAssemblyEvent;
-    private Optional<FileEvent> loadByteCodeEvent;
-    private Optional<FileEvent> saveAssemblyEvent;
-    private Optional<FileEvent> saveByteCodeEvent;
-    private Optional<EmulationRunEvent> emulationRunEvent;
+    private DebuggerView debugView = null;
+    private Optional<Events.ForView> events = Optional.empty();
 
     private static GridBagConstraints makeLayoutConstrains(int x, int y) {
         GridBagConstraints gc = new GridBagConstraints();
@@ -46,28 +34,70 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
         super("Chip-8 Emulator");
         setSize(800, 600);
         setLayout(new GridBagLayout());
+        setFocusable(true);
 
         setupMenu();
+        setupStatus();
         setupAssemblyView();
         setupDebuggerView();
 
+        addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent keyEvent) {
+
+            }
+
+            @Override
+            public void keyPressed(KeyEvent keyEvent) {
+                System.out.println(keyEvent);
+                onKeyPress(keyEvent.getKeyCode());
+            }
+
+            @Override
+            public void keyReleased(KeyEvent keyEvent) {
+
+            }
+        });
+
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         pack();
-
+        setStatusText("READY");
         setVisible(true);
+    }
+
+    private void setupStatus() {
+        status = new JLabel("");
+        add(status, makeLayoutConstrains(1, 0));
+    }
+
+    private void onKeyPress(int key) {
+        System.out.println(key);
+        switch (key) {
+            case KeyEvent.VK_F2:
+                events.ifPresent(events -> events.sendMarkAsDataEvent(assemblyView.getSelectedLine()));
+                break;
+            case KeyEvent.VK_F3:
+                events.ifPresent(events -> events.sendMarkAsCodeEvent(assemblyView.getSelectedLine()));
+                break;
+            case KeyEvent.VK_F5:
+                events.ifPresent(events -> events.sendContinueEvent());
+                break;
+            case KeyEvent.VK_F7:
+                events.ifPresent(events -> events.sendStepInEvent());
+                break;
+            case KeyEvent.VK_F8:
+                events.ifPresent(events -> events.sendStepOverEvent());
+                break;
+        }
     }
 
     @Override
     public void setupEventHandlers(ControllerInterface controller) {
-        loadAssemblyEvent = Optional.of(controller::loadAssemblyFromFile);
-        loadByteCodeEvent = Optional.of(controller::loadByteCodeFromFile);
-        saveAssemblyEvent = Optional.of(controller::saveAssemblyToFile);
-        saveByteCodeEvent = Optional.of(controller::saveByteCodeToFile);
-        emulationRunEvent = Optional.of(controller::runEmulation);
+        events = Optional.of(new Events.ForView(controller));
     }
 
     private void setupDebuggerView() {
-        debugView = new DebugerView();
+        debugView = new DebuggerView();
         add(debugView, makeLayoutConstrains(1, 1));
     }
 
@@ -76,13 +106,12 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
         add(menu, makeLayoutConstrains(0,0));
     }
 
-
-
     private void setupAssemblyView() {
         assemblyView = new AssemblyView();
         add(assemblyView, makeLayoutConstrains(0, 1, 1, 1));
     }
 
+    // =========================== EVENTS =================================
     @Override
     public String getAssembly() {
         return assemblyView.getText();
@@ -93,27 +122,60 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
     }
     @Override
     public void setPixelRGB(int x, int y, int value) {
-        //screen.setPixel(x, y, value);
+        debugView.setPixel(x, y, value);
         repaint();
     }
     @Override
     public void clearScreen() {
-        //screen.clear();
+        debugView.clearScreen();
         repaint();
     }
     @Override
     public int getPixelRGB(int x, int y) {
-        return 1;//screen.getPixel(x, y);
+        return debugView.getPixel(x, y);
     }
 
     @Override
     public void reportError(String msg) {
         JOptionPane.showMessageDialog(null, msg);
+        System.out.println("end");
     }
+
+    @Override
+    public void setLineColor(int linen, Color color) {
+        assemblyView.setLineColor(linen, color);
+    }
+
+    @Override
+    public void clearLineColors() {
+        assemblyView.clearLinesColor();
+    }
+
+    @Override
+    public void setStatusText(String text) {
+        status.setText(text);
+    }
+
+    @Override
+    public void setRegisterValue(int n, int value) {
+        debugView.updateRegisterValue(n, value);
+    }
+
+    @Override
+    public void enableAssemblerEditing() {
+        assemblyView.enableInput();
+    }
+
+    @Override
+    public void disableAssemblerEditing() {
+        assemblyView.disableInput();
+    }
+    // ===============================================================
 
     private class AssemblyView extends JPanel {
         private JTextArea content;
         private JScrollPane viewPort;
+        private boolean inputDisabled = false;
 
         public AssemblyView() {
             content = new JTextArea(10, 10);
@@ -121,13 +183,66 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
             viewPort.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
             setLayout(new GridBagLayout());
             add(viewPort, makeLayoutConstrains(0, 0, 1, 1));
+            content.addKeyListener(new KeyListener() {
+                @Override
+                public void keyTyped(KeyEvent keyEvent) {
+                    if(inputDisabled) {
+                        keyEvent.consume();
+                    }
+                }
+
+                @Override
+                public void keyPressed(KeyEvent keyEvent) {
+                    EmulatorView.this.onKeyPress(keyEvent.getKeyCode());
+                    if(inputDisabled) {
+                        keyEvent.consume();
+                    }
+                }
+
+                @Override
+                public void keyReleased(KeyEvent keyEvent) {
+                    if(inputDisabled) {
+                        keyEvent.consume();
+                    }
+                }
+            });
         }
 
         public String getText() {
             return content.getText();
         }
         public void setText(String text) {
+            int savedPosition = content.getCaretPosition();
             content.setText(text);
+            content.setCaretPosition(savedPosition);
+        }
+        public void setLineColor(int linen, Color color) {
+            DefaultHighlighter.DefaultHighlightPainter painter = new DefaultHighlighter.DefaultHighlightPainter(color);
+            try {
+                int start = content.getLineStartOffset(linen);
+                int end = content.getLineEndOffset(linen);
+                content.getHighlighter().addHighlight(start, end, painter);
+            } catch (BadLocationException ignored) {
+
+            }
+        }
+        public void clearLinesColor() {
+            content.getHighlighter().removeAllHighlights();
+        }
+        public int getSelectedLine() {
+            try {
+                return content.getLineOfOffset(content.getCaretPosition());
+            }catch(BadLocationException e) {
+                return 0;
+            }
+        }
+        public void enableInput() {
+            content.setEditable(true);
+            inputDisabled = false;
+        }
+        public void disableInput() {
+            content.setEditable(false);
+            inputDisabled = true;
         }
     }
 
@@ -143,7 +258,7 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
         @Override
         protected void paintComponent(Graphics gr) {
             super.paintComponent(gr);
-            var scaledImg = img.getScaledInstance(scaled.width, scaled.height, Image.SCALE_FAST);
+            Image scaledImg = img.getScaledInstance(scaled.width, scaled.height, Image.SCALE_FAST);
             gr.drawImage(scaledImg, 0, 0, this);
         }
 
@@ -162,7 +277,6 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
             scaled.width = width;
             scaled.height = height;
         }
-
     }
 
     private class Menu extends JPanel {
@@ -194,22 +308,22 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
             saveAssemblyFileButton.addActionListener(event -> saveAssemblyFile());
         }
         private void openAssemblyFile() {
-            var filePath = getOpenFilePathDialog();
-            filePath.ifPresent(path -> loadAssemblyEvent.ifPresent(event -> event.send(path)));
+            Optional<String> filePath = getOpenFilePathDialog();
+            events.ifPresent(events -> filePath.ifPresent(events::sendLoadAssemblyEvent));
         }
         private void openByteCodeFile() {
-            var filePath = getOpenFilePathDialog();
-            filePath.ifPresent(path -> loadByteCodeEvent.ifPresent(event -> event.send(path)));
+            Optional<String> filePath = getOpenFilePathDialog();
+            events.ifPresent(events -> filePath.ifPresent(events::sendLoadByteCodeEvent));
         }
 
         private void saveByteCodeFile() {
-            var filePath = getSaveFilePathDialog();
-            saveByteCodeEvent.ifPresent(event -> filePath.ifPresent(path -> event.send(path)));
+            Optional<String> filePath = getSaveFilePathDialog();
+            events.ifPresent(events -> filePath.ifPresent(events::sendSaveByteCodeEvent));
         }
 
         private void saveAssemblyFile() {
-            var filePath = getSaveFilePathDialog();
-            saveAssemblyEvent.ifPresent(event -> filePath.ifPresent(path -> event.send(path)));
+            Optional<String> filePath = getSaveFilePathDialog();
+            events.ifPresent(events -> filePath.ifPresent(events::sendSaveAssemblyEvent));
         }
 
         private Optional<String> getOpenFilePathDialog() {
@@ -230,7 +344,7 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
             return Optional.empty();
         }
     }
-    private class DebugerView extends JPanel {
+    private class DebuggerView extends JPanel {
         private Screen screen = null;
 
         private JButton stepInButton = null;
@@ -241,11 +355,33 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
 
         ArrayList<JLabel> registerLabels = null;
         ArrayList<JLabel> registerValues = null;
-        ArrayList<JTextField> registerValuesToSet = null;
+        ArrayList<LimitedTextField> registerValuesToSet = null;
         ArrayList<JButton> registerSetButton = null;
         ArrayList<JPanel> panels = null;
 
-        public DebugerView() {
+        private class LimitedTextField extends JTextField {
+            private int limit;
+
+            public LimitedTextField(int limit) {
+                this.limit = limit;
+            }
+
+            @Override
+            protected Document createDefaultModel() {
+                return new LimitedDocument();
+            }
+
+            private class LimitedDocument extends PlainDocument {
+                @Override
+                public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
+                    if(getLength() + str.length() <= limit) {
+                        super.insertString(offs, str, a);
+                    }
+                }
+            }
+        }
+
+        public DebuggerView() {
             setLayout(new GridBagLayout());
 
             screen = new Screen(64, 32);
@@ -256,6 +392,12 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
             continueButton = new JButton("Continue");
             stopButton = new JButton("STOP");
             runButton = new JButton("RUN");
+
+            stepInButton.addActionListener(event -> stepIn());
+            stepOverButton.addActionListener(event -> stepOver());
+            continueButton.addActionListener(event -> cont());
+            stopButton.addActionListener(event -> stop());
+            runButton.addActionListener(event -> run());
 
             registerLabels = new ArrayList<>();
             registerValues = new ArrayList<>();
@@ -274,25 +416,60 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
             add(screen, makeLayoutConstrains(0, 0));
             add(controlPanel, makeLayoutConstrains(0, 1));
 
-            for(int i=0; i < 16; ++i) {
-                var label = new JLabel(String.format("v%d", i));
-                var value = new JLabel("0000");
-                var valueToSet = new JTextField("0000");
-                var button = new JButton("Set Value");
+            for(int i=0; i < 18; ++i) {
+                JLabel label;
+                switch(i) {
+                    case 16: label = new JLabel("I"); break;
+                    case 17: label = new JLabel("ip"); break;
+                    default:
+                        label = new JLabel(String.format("v%d", i));
+                }
+                JLabel value = new JLabel("0000");
+                LimitedTextField valueToSet = new LimitedTextField(4);
+                JButton button = new JButton("Set Value");
 
                 registerLabels.add(label);
                 registerValues.add(value);
                 registerValuesToSet.add(valueToSet);
                 registerSetButton.add(button);
 
-                var panel = new JPanel();
+                valueToSet.addMouseListener(new MouseListener() {
+                    @Override
+                    public void mouseClicked(MouseEvent mouseEvent) {
+                        System.out.println(mouseEvent);
+                        valueToSet.setText("");
+                    }
+
+                    @Override
+                    public void mousePressed(MouseEvent mouseEvent) {
+
+                    }
+
+                    @Override
+                    public void mouseReleased(MouseEvent mouseEvent) {
+
+                    }
+
+                    @Override
+                    public void mouseEntered(MouseEvent mouseEvent) {
+
+                    }
+
+                    @Override
+                    public void mouseExited(MouseEvent mouseEvent) {
+
+                    }
+                });
+                valueToSet.setText("0000");
+                valueToSet.setColumns(4);
+
+                JPanel panel = new JPanel();
                 panel.setLayout(new FlowLayout());
                 panel.add(label);
                 panel.add(value);
                 panel.add(valueToSet);
                 panel.add(button);
                 panels.add(panel);
-
 
                 int finalI = i;
                 button.addActionListener(new ActionListener() {
@@ -306,7 +483,7 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
             }
 
             for(int i=0; i < panels.size()/2; ++i) {
-                var panel = new JPanel();
+                JPanel panel = new JPanel();
                 panel.setLayout(new FlowLayout());
                 panel.add(panels.get(2 * i + 0));
                 panel.add(panels.get(2 * i + 1));
@@ -315,9 +492,62 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
 
         }
 
+        private void stepIn() {
+            events.ifPresent(Events.ForView::sendStepInEvent);
+        }
+
+        private void stepOver() {
+            events.ifPresent(Events.ForView::sendStepOverEvent);
+        }
+
+        private void run() {
+            events.ifPresent(Events.ForView::sendRunEvent);
+        }
+
+        private void cont() {
+            events.ifPresent(Events.ForView::sendContinueEvent);
+        }
+
+        private void stop() {
+            events.ifPresent(Events.ForView::sendStopEvent);
+        }
+
+        private void setReg(int n, int value) {
+            String newValue = String.format("%X", value);
+            registerValues.get(n).setText(newValue);
+            registerValuesToSet.get(n).setText(newValue);
+        }
 
         private void setRegisterValue(int index) {
-            System.out.println(index);
+            String text = registerValuesToSet.get(index).getText();
+            try {
+                events.ifPresent(
+                        events -> events.sendSetRegisterValueEvent(
+                                Registers.fromInt(index),
+                                Integer.parseInt(text, 16)
+                        )
+                );
+            } catch (NumberFormatException e) {
+                registerValuesToSet.get(index).setText("");
+                //setStatusText("Cannot convert to number");
+                reportError("conversion error");
+            }
+        }
+
+        public void updateRegisterValue(int n, int value) {
+            registerValues.get(n).setText(String.format("%X", value));
+        }
+
+        public void setPixel(int x, int y, int value) {
+            screen.setPixel(x, y, value);
+        }
+
+        public int getPixel(int x, int y) {
+            return screen.getPixel(x, y);
+        }
+
+        public void clearScreen() {
+            screen.clear();
         }
     }
 }
