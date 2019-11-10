@@ -58,7 +58,7 @@ public class InstructionTypes {
         int valueNN;
 
         public Type_XNN(short opcode) {
-            valueX = (opcode >> 8) % 0xf;
+            valueX = (opcode >> 8) & 0xf;
             valueNN = (byte)(opcode & 0xff);
         }
 

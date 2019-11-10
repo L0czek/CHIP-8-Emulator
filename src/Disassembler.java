@@ -53,10 +53,10 @@ public class Disassembler {
         while(!toCheck.isEmpty()) {
             int index = toCheck.get(0) - 0x200;
             toCheck.remove(0);
-            if(codeIndexes.indexOf(index) != -1) {
+            if(codeIndexes.indexOf(index) != -1 || index < 0) {
                 continue;
             }
-            if(index >= data.length) {
+            if(index + 1 >= data.length) {
                 break;
             }
             short opcode = (short)((((int)data[index] << 8) & 0xff00) | ((int)data[index+1] & 0xff));

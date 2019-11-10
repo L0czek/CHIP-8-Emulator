@@ -1,3 +1,4 @@
+import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.*;
@@ -12,15 +13,17 @@ import java.util.Optional;
 public class EmulatorModel implements ModelInterface {
     private byte[] byteCode;
     private String[] assemblyLines;
-    private VirtualMachine virtualMachine;
+    private VirtualMachineState vmState;
+    private Assembler.Assembled vmCode;
 
     private Disassembler disassembler;
     private Assembler assembler;
 
+    Optional<Events.ViewForModel> events = Optional.empty();
+
     public EmulatorModel() throws Exception {
         byteCode = new byte[]{};
         assemblyLines = new String[]{};
-        virtualMachine = new VirtualMachine();
 
         disassembler = new Disassembler(InstructionFactory.factoriesByIndex());
         assembler = new Assembler(InstructionFactory.factoriesByMnemonic());
@@ -32,13 +35,24 @@ public class EmulatorModel implements ModelInterface {
     }
 
     @Override
-    public BufferedImage getScreen() {
-        return null;
+    public int[][] getScreen() {
+        return vmState.getScreen();
+    }
+
+    @Override
+    public int getPixel(int x, int y) {
+        return vmState.getPixel(x,y);
     }
 
     @Override
     public int getRegisterValue(Registers r) {
-        return 0;
+        if(r == Registers.I) {
+            return vmState.getRegI();
+        } else if(r == Registers.ip) {
+            return vmState.getIp();
+        } else {
+            return vmState.getReg(Registers.toInt(r));
+        }
     }
 
     @Override
@@ -74,40 +88,41 @@ public class EmulatorModel implements ModelInterface {
 
     @Override
     public void startEmulation(String assembly) throws Assembler.AssemblerException {
-        byteCode = assembler.generateByteCode(assembly,0);
-
+        vmCode = assembler.generateOutput(assembly, 0);
+        vmState = new VirtualMachineState(vmCode, disassembler, events);
     }
 
     @Override
     public String recompileAsCode(int linen, String assembly) throws Assembler.AssemblerException {
         assemblyLines = assembly.split("\n");
+        StringBuilder builder = new StringBuilder();
         byte[] compiled = assembler.generateByteCode(assemblyLines[linen], linen);
         if(compiled.length == 0) {
             return assembly;
         }
+        int index = 0;
+        for(; index < linen; ++index) {
+            builder.append(assemblyLines[index]).append("\n");
+        }
+        index = linen + 1;
         if(compiled.length == 1 && linen + 1 < assemblyLines.length) {
             byte[] addition = assembler.generateByteCode(assemblyLines[linen+1], linen+1);
+            index++;
             if(addition.length == 1) {
                 compiled = new byte[]{ compiled[0], addition[0] };
-                for(int i=linen+1; i + 1 < assemblyLines.length; ++i) {
-                    assemblyLines[i] = assemblyLines[i+1];
-                }
-                assemblyLines[assemblyLines.length-1] = "";
             } else if(addition.length == 2){
                 compiled = new byte[]{ compiled[0], addition[0], addition[1] };
             } else {
                 return assembly;
             }
         }
-        int i = linen;
         for (String line : disassembler.disassemble(compiled).split("\n")) {
-            if(line.length() == 0) {
-                continue;
-            }
-            assemblyLines[i++] = line;
+            builder.append(line).append("\n");
         }
-        return assembler.fixOffsets(String.join("\n", assemblyLines));
-
+        for(; index < assemblyLines.length; ++index) {
+            builder.append(assemblyLines[index]).append("\n");
+        }
+        return assembler.fixOffsets(builder.toString());
     }
 
     @Override
@@ -126,7 +141,21 @@ public class EmulatorModel implements ModelInterface {
     }
 
     @Override
-    public void executeOpcode() {
+    public void executeOpcode() throws VirtualMachineState.VMException {
+        vmState.executeInstruction();
+    }
 
+    @Override
+    public int getCurrentExecutingLineNumber() {
+        try {
+            return vmCode.getLineNumbers()[vmState.getIp() - 0x200];
+        } catch(ArrayIndexOutOfBoundsException e){
+            return 0;
+        }
+    }
+
+    @Override
+    public void setupEventHandlers(ViewInterface view) {
+        events = Optional.of(new Events.ViewForModel(view));
     }
 }

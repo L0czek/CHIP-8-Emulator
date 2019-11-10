@@ -50,7 +50,7 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
             @Override
             public void keyPressed(KeyEvent keyEvent) {
                 System.out.println(keyEvent);
-                onKeyPress(keyEvent.getKeyCode());
+                onKeyPress(keyEvent);
             }
 
             @Override
@@ -70,7 +70,8 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
         add(status, makeLayoutConstrains(1, 0));
     }
 
-    private void onKeyPress(int key) {
+    private void onKeyPress(KeyEvent keyEvent) {
+        int key = keyEvent.getKeyCode();
         System.out.println(key);
         switch (key) {
             case KeyEvent.VK_F2:
@@ -130,6 +131,12 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
         debugView.clearScreen();
         repaint();
     }
+
+    @Override
+    public void setScreen(BufferedImage screen) {
+        debugView.setScreen(screen);
+    }
+
     @Override
     public int getPixelRGB(int x, int y) {
         return debugView.getPixel(x, y);
@@ -157,8 +164,8 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
     }
 
     @Override
-    public void setRegisterValue(int n, int value) {
-        debugView.updateRegisterValue(n, value);
+    public void setRegisterValue(Registers r, int value) {
+        debugView.updateRegisterValue(r, value);
     }
 
     @Override
@@ -193,7 +200,7 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
 
                 @Override
                 public void keyPressed(KeyEvent keyEvent) {
-                    EmulatorView.this.onKeyPress(keyEvent.getKeyCode());
+                    EmulatorView.this.onKeyPress(keyEvent);
                     if(inputDisabled) {
                         keyEvent.consume();
                     }
@@ -276,6 +283,10 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
             setSize(new Dimension(width, height));
             scaled.width = width;
             scaled.height = height;
+        }
+        public void setImage(BufferedImage img) {
+            this.img = img;
+            repaint();
         }
     }
 
@@ -534,8 +545,8 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
             }
         }
 
-        public void updateRegisterValue(int n, int value) {
-            registerValues.get(n).setText(String.format("%X", value));
+        public void updateRegisterValue(Registers r, int value) {
+            registerValues.get(Registers.toInt(r)).setText(String.format("%04X", value));
         }
 
         public void setPixel(int x, int y, int value) {
@@ -548,6 +559,9 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
 
         public void clearScreen() {
             screen.clear();
+        }
+        public void setScreen(BufferedImage img) {
+            screen.setImage(img);
         }
     }
 }

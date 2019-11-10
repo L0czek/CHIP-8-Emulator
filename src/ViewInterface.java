@@ -1,4 +1,5 @@
 import java.awt.*;
+import java.awt.image.BufferedImage;
 
 public interface ViewInterface {
     String getAssembly();
@@ -11,7 +12,8 @@ public interface ViewInterface {
     void setLineColor(int linen, Color color);
     void clearLineColors();
     void setStatusText(String text);
-    void setRegisterValue(int n, int value);
+    void setRegisterValue(Registers r, int value);
     void enableAssemblerEditing();
     void disableAssemblerEditing();
+    void setScreen(BufferedImage screen);
 }

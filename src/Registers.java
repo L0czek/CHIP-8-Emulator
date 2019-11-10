@@ -1,3 +1,6 @@
+import java.util.Arrays;
+import java.util.List;
+
 public enum Registers {
     v0,
     v1,
@@ -46,5 +49,9 @@ public enum Registers {
 
     public static int toInt(Registers r) {
         return r.ordinal();
+    }
+
+    public static List<Registers> iterate() {
+        return Arrays.asList(Registers.values()).subList(0, 18);
     }
 }

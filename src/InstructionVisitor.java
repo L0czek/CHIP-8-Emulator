@@ -66,6 +66,7 @@ public class InstructionVisitor {
 
         @Override
         public void visit(InstructionSet.CallWordPtr instr) {
+            ips.add(instr.getValueNNN());
             ips.add(currentIp + 2);
         }
 

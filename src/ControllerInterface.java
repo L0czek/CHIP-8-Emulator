@@ -1,3 +1,5 @@
+import java.awt.event.KeyEvent;
+
 public interface ControllerInterface {
     void loadAssemblyFromFile(String path);
     void loadByteCodeFromFile(String path);
@@ -13,4 +15,5 @@ public interface ControllerInterface {
     void markAsCode(int linen);
     void markAsData(int linen);
     void setRegisterValue(Registers r, int value);
+    void keyPressed(KeyEvent keyEvent);
 }

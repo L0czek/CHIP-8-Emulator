@@ -48,6 +48,9 @@ public class Events {
         public void sendSetRegisterValueEvent(Registers r, int value) {
             SwingUtilities.invokeLater(() -> controller.setRegisterValue(r, value));
         }
+        public void sendKeyPressedEvent(KeyEvent keyEvent) {
+            SwingUtilities.invokeLater(() -> controller.keyPressed(keyEvent));
+        }
     }
 
     public static class ViewForController {
@@ -93,14 +96,17 @@ public class Events {
             SwingUtilities.invokeLater(() -> view.setStatusText(text));
         }
 
-        public void sendSetRegisterValueEvent(int n, int value) {
-            SwingUtilities.invokeLater(() -> view.setRegisterValue(n, value));
+        public void sendSetRegisterValueEvent(Registers r, int value) {
+            SwingUtilities.invokeLater(() -> view.setRegisterValue(r, value));
         }
         public void sendEnableAssemblerEditingEvent() {
             SwingUtilities.invokeLater(() -> view.enableAssemblerEditing());
         }
         public void sendDisableAssemblerEditingEvent() {
             SwingUtilities.invokeLater(() -> view.disableAssemblerEditing());
+        }
+        public void sendSetScreenEvent(BufferedImage screen) {
+            SwingUtilities.invokeLater(() -> view.setScreen(screen));
         }
     }
 
@@ -131,8 +137,11 @@ public class Events {
         public String sendRecompileAsData(int linen, String assembly) throws Assembler.AssemblerException {
             return model.recompileAsData(linen, assembly);
         }
-        public void sendExecuteOpcodeEvent() {
+        public void sendExecuteOpcodeEvent() throws VirtualMachineState.VMException {
             model.executeOpcode();
+        }
+        public int sendGetCurrentExecutingLineEvent() {
+            return model.getCurrentExecutingLineNumber();
         }
         public void sendSetRegisterValueEvent(Registers r, int value) {
             model.setRegisterValue(r, value);
@@ -143,8 +152,32 @@ public class Events {
         public void sendKeyPressedEvent(KeyEvent keyEvent) {
             model.keyPressed(keyEvent);
         }
-        public BufferedImage sendGetScreenEvent() {
+        public int[][] sendGetScreenEvent() {
             return model.getScreen();
         }
+        public int sendGetPixelEvent(int x, int y) {
+            return model.getPixel(x, y);
+        }
+    }
+
+    public static class ViewForModel {
+        private ViewInterface view = null;
+
+        public ViewForModel(ViewInterface view) {
+            this.view = view;
+        }
+        public void sendSetLineColorEvent(int linen, Color color) {
+            SwingUtilities.invokeLater(() -> view.setLineColor(linen, color));
+        }
+        public void sendClearLineColorsEvent() {
+            SwingUtilities.invokeLater(() -> view.clearLineColors());
+        }
+        public void sendSetPixelRGBEvent(int x, int y, int value) {
+            SwingUtilities.invokeLater(() -> view.setPixelRGB(x, y, value));
+        }
+        public void sendClearScreenEvent() {
+            SwingUtilities.invokeLater(() -> view.clearScreen());
+        }
+
     }
 }

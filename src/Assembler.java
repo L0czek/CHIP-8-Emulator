@@ -1,4 +1,3 @@
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Optional;
@@ -6,12 +5,61 @@ import java.util.Optional;
 public class Assembler {
     private HashMap<String, InstructionFactoryInterface> factories;
 
+    public static class AssemblerResult {
+        private Serializable instr;
+        private int linen;
+
+        public AssemblerResult(Serializable instr, int linen) {
+            this.linen = linen;
+            this.instr = instr;
+        }
+        public Serializable getInstruction() {
+            return instr;
+        }
+
+        public int getLineNumber() {
+            return linen;
+        }
+    }
+
+    public static class Assembled {
+        byte[] byteCode;
+        int[] linens;
+
+        public Assembled(byte[] byteCode, int[] linens) {
+            this.byteCode = byteCode;
+            this.linens = linens;
+        }
+
+        public static Assembled fromResults(ArrayList<AssemblerResult> results) {
+            int[] linens = new int[results.size()*2];
+            ArrayList<Byte> bc = new ArrayList<>();
+            for (AssemblerResult result : results) {
+                linens[bc.size()] = result.getLineNumber();
+                result.getInstruction().serialize(bc);
+            }
+            byte[] byteCode = new byte[bc.size()];
+            for(int i=0; i < bc.size(); ++i) {
+                byteCode[i] = bc.get(i);
+            }
+            return new Assembled(byteCode, linens);
+        }
+
+        public byte[] getByteCode() {
+            return byteCode;
+        }
+
+        public int[] getLineNumbers() {
+            return linens;
+        }
+    }
+
     public Assembler(HashMap<String, InstructionFactoryInterface> factories_) {
         factories = factories_;
     }
 
-    public ArrayList<Serializable> assemble(String assembly, int linen) throws AssemblerException {
-        ArrayList<Serializable> result = new ArrayList<>();
+    public ArrayList<AssemblerResult> assemble(String assembly, int linen) throws AssemblerException {
+        ArrayList<AssemblerResult> result = new ArrayList<>();
         for(String line : assembly.split("\n")) {
             line = trimComments(line).replaceAll("^[\\s]+", "");
             if(line.length() == 0) {
@@ -21,7 +69,7 @@ public class Assembler {
             String mnemonic = assemblyArgs[0];
             if(mnemonic.equals("db")) {
                 try{
-                    result.add(new EmitBytesInstruction(assemblyArgs));
+                    result.add(new AssemblerResult(new EmitBytesInstruction(assemblyArgs), linen));
                 } catch (Exception e) {
                     throw new AssemblerException(linen, e.getMessage());
                 }
@@ -32,7 +80,7 @@ public class Assembler {
                 }
                 assembled = factories.get(mnemonic).fromAssembly(assemblyArgs);
                 if(assembled.isPresent()) {
-                    result.add(assembled.get());
+                    result.add(new AssemblerResult(assembled.get(), linen));
                 } else {
                     throw new AssemblerException(linen, "Invalid arguments to instruction");
                 }
@@ -44,12 +92,16 @@ public class Assembler {
 
     public byte[] generateByteCode(String assembly, int linen) throws AssemblerException {
         ArrayList<Byte> byteCode = new ArrayList<>();
-        assemble(assembly, linen).forEach(instruction -> instruction.serialize(byteCode));
+        assemble(assembly, linen).forEach(result -> result.getInstruction().serialize(byteCode));
         byte[] result = new byte[byteCode.size()];
         for(int i=0; i < byteCode.size(); ++i) {
             result[i] = byteCode.get(i);
         }
         return result;
+    }
+
+    public Assembled generateOutput(String assembly, int linen) throws AssemblerException {
+        return Assembled.fromResults(assemble(assembly, linen));
     }
 
     private String trimComments(String assembly) {

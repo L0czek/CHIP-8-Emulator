@@ -11,10 +11,13 @@ public interface ModelInterface {
     String recompileAsCode(int linen, String assembly) throws Assembler.AssemblerException;
     String recompileAsData(int linen, String assembly) throws Assembler.AssemblerException;
     void startEmulation(String assembly) throws Assembler.AssemblerException;
-    void executeOpcode();
+    void executeOpcode() throws VirtualMachineState.VMException;
     void setRegisterValue(Registers r, int value);
     int getRegisterValue(Registers r);
     void keyPressed(KeyEvent keyEvent);
-    BufferedImage getScreen();
+    int getCurrentExecutingLineNumber();
+    int[][] getScreen();
+    int getPixel(int x, int y);
+    void setupEventHandlers(ViewInterface view);
 
 }

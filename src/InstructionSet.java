@@ -131,8 +131,7 @@ public class InstructionSet {
 
         @Override
         public void execute(VirtualMachineState state) {
-            int address = state.memoryGetShort(getValueNNN());
-            state.callSubroutine(address);
+            state.callSubroutine(getValueNNN() & 0xfff);
         }
 
         @Override
@@ -171,6 +170,8 @@ public class InstructionSet {
             int reg = state.getReg(getValueX());
             if(reg == getValueNN()) {
                 state.skipInstruction();
+            } else {
+                state.nextInstruction();
             }
         }
 
@@ -210,6 +211,8 @@ public class InstructionSet {
             int reg = state.getReg(getValueX());
             if(reg != getValueNN()) {
                 state.skipInstruction();
+            } else {
+                state.nextInstruction();
             }
         }
 
@@ -249,6 +252,8 @@ public class InstructionSet {
             int reg2 = state.getReg(getValueY());
             if(reg1 == reg2) {
                 state.skipInstruction();
+            } else {
+                state.nextInstruction();
             }
         }
 
@@ -285,6 +290,7 @@ public class InstructionSet {
         @Override
         public void execute(VirtualMachineState state) {
             state.setReg(getValueX(), 0xff & getValueNN());
+            state.nextInstruction();
         }
 
         @Override
@@ -319,7 +325,8 @@ public class InstructionSet {
 
         @Override
         public void execute(VirtualMachineState state) {
-            state.setReg(getValueX(), (byte)(state.getReg(getValueX()) + 0xff & getValueNN()));
+            state.setReg(getValueX(), (byte)(state.getReg(getValueX()) + getValueNN()));
+            state.nextInstruction();
         }
 
         @Override
@@ -356,6 +363,7 @@ public class InstructionSet {
         @Override
         public void execute(VirtualMachineState state) {
             state.setReg(getValueX(), state.getReg(getValueY()));
+            state.nextInstruction();
         }
 
         @Override
@@ -391,6 +399,7 @@ public class InstructionSet {
         @Override
         public void execute(VirtualMachineState state) {
             state.setReg(getValueX(), (byte)(state.getReg(getValueX()) | state.getReg(getValueY())));
+            state.nextInstruction();
         }
 
         @Override
@@ -426,6 +435,7 @@ public class InstructionSet {
         @Override
         public void execute(VirtualMachineState state) {
             state.setReg(getValueX(), (byte)(state.getReg(getValueX()) & state.getReg(getValueY())));
+            state.nextInstruction();
         }
 
         @Override
@@ -462,6 +472,7 @@ public class InstructionSet {
         @Override
         public void execute(VirtualMachineState state) {
             state.setReg(getValueX(), (state.getReg(getValueX()) ^ state.getReg(getValueY())));
+            state.nextInstruction();
         }
 
         @Override
@@ -502,6 +513,7 @@ public class InstructionSet {
                 state.setReg(0x15, 1);
             }
             state.setReg(getValueX(), result & 0xff);
+            state.nextInstruction();
         }
 
         @Override
@@ -543,6 +555,7 @@ public class InstructionSet {
                 state.setReg(15, 1);
             }
             state.setReg(getValueX(), result & 0xff);
+            state.nextInstruction();
         }
 
         @Override
@@ -580,6 +593,7 @@ public class InstructionSet {
         public void execute(VirtualMachineState state) {
             state.setReg(15, state.getReg(getValueX()) & 1);
             state.setReg(getValueX(), state.getReg(getValueX()) >> 1);
+            state.nextInstruction();
         }
 
         @Override
@@ -620,6 +634,7 @@ public class InstructionSet {
                 state.setReg(15, 1);
             }
             state.setReg(getValueX(), result & 0xff);
+            state.nextInstruction();
         }
 
         @Override
@@ -658,6 +673,7 @@ public class InstructionSet {
             int reg = state.getReg(getValueX());
             state.setReg(15, reg >> 7);
             state.setReg(getValueX(), (reg << 1) & 0xfe);
+            state.nextInstruction();
         }
 
         @Override
@@ -695,6 +711,8 @@ public class InstructionSet {
         public void execute(VirtualMachineState state) {
             if(state.getReg(getValueX()) != state.getReg(getValueY())) {
                 state.skipInstruction();
+            } else {
+                state.nextInstruction();
             }
         }
 
@@ -731,6 +749,7 @@ public class InstructionSet {
         @Override
         public void execute(VirtualMachineState state) {
             state.setRegI(getValueNNN());
+            state.nextInstruction();
         }
 
         @Override
@@ -767,6 +786,7 @@ public class InstructionSet {
         @Override
         public void execute(VirtualMachineState state) {
             state.jump(state.getReg(0) + getValueNNN());
+            state.nextInstruction();
         }
 
         @Override
@@ -803,11 +823,12 @@ public class InstructionSet {
         @Override
         public void execute(VirtualMachineState state) {
             state.setReg(getValueX(), (int)(Math.random() * 0x100) & 0xff & getValueNN());
+            state.nextInstruction();
         }
 
         @Override
         public String disassemble() {
-            return String.format("%s v%d, 0x%X\n", getMnemonic(), getValueX(), 0xff & getValueNN());
+            return String.format("%s v%d, 0x%X\n", getMnemonic(), getValueX()&0xff, 0xff & getValueNN());
         }
 
         @Override
@@ -839,6 +860,7 @@ public class InstructionSet {
         @Override
         public void execute(VirtualMachineState state) {
             state.clearScreen();
+            state.nextInstruction();
         }
 
         @Override
@@ -875,6 +897,7 @@ public class InstructionSet {
         @Override
         public void execute(VirtualMachineState state) {
             state.setReg(getValueX(), state.getDelayTimerCounter());
+            state.nextInstruction();
         }
 
         @Override
@@ -911,6 +934,7 @@ public class InstructionSet {
         @Override
         public void execute(VirtualMachineState state) {
             state.setDelayTimerCounter(state.getReg(getValueX()));
+            state.nextInstruction();
         }
 
         @Override
@@ -946,6 +970,7 @@ public class InstructionSet {
         @Override
         public void execute(VirtualMachineState state) {
             state.setSoundTimerCounter(state.getReg(getValueX()));
+            state.nextInstruction();
         }
 
         @Override
@@ -981,6 +1006,7 @@ public class InstructionSet {
         @Override
         public void execute(VirtualMachineState state) {
             state.setRegI(state.getRegI() + state.getReg(getValueX()));
+            state.nextInstruction();
         }
 
         @Override
@@ -1020,6 +1046,7 @@ public class InstructionSet {
             state.memorySetByte(address + 0, (byte)((value / 100) & 0xff));
             state.memorySetByte(address + 1, (byte)(((value / 10) % 10) & 0xff));
             state.memorySetByte(address + 2, (byte)((value % 10) & 0xff));
+            state.nextInstruction();
         }
 
         @Override
@@ -1059,6 +1086,7 @@ public class InstructionSet {
             for(int i=0; i < end; ++i) {
                 state.memorySetByte(address + i, (byte)(0xff & state.getReg(i)));
             }
+            state.nextInstruction();
         }
 
         @Override
@@ -1098,6 +1126,7 @@ public class InstructionSet {
             for(int i=0; i < end; ++i) {
                 state.setReg(i, state.memoryGetByte(address + i) & 0xff);
             }
+            state.nextInstruction();
         }
 
         @Override
@@ -1133,19 +1162,23 @@ public class InstructionSet {
 
         @Override
         public void execute(VirtualMachineState state) {
-            int x = state.getReg(getValueX());
-            int y = state.getReg(getValueY());
+            int x = state.getReg(getValueX()) % 64;
+            int y = state.getReg(getValueY()) % 32;
             int n = getValueN();
             int address = state.getRegI();
             boolean flipped = false;
             for(int i=0; i < n; ++i) {
-                int sprite = state.memoryGetByte(address + i);
+                int sprite = state.memoryGetByte(address + i) & 0xff;
                 for(int j=0; j < 8; ++j) {
                     int bit = (sprite >> (7-j)) & 1;
                     if(bit != 0 && state.getPixel(x + j, y) == 0xffffff) {
                         flipped = true;
                     }
-                    state.setPixel(x + j, y, state.getPixel(x + j, y) ^ 0xffffff);
+                    int cordX = x + j;
+                    int cordY = y + i;
+                    int currentValue = state.getPixel(cordX, cordY) & 0x01;
+                    int newValue = 0xffffffff * (currentValue ^ bit);
+                    state.setPixel(cordX, cordY, newValue);
                 }
             }
             if(flipped) {
@@ -1153,6 +1186,8 @@ public class InstructionSet {
             } else {
                 state.setReg(15, 0);
             }
+            state.updateScreen();
+            state.nextInstruction();
         }
 
         @Override

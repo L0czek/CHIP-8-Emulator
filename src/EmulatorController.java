@@ -1,5 +1,7 @@
 import java.awt.*;
+import java.awt.event.KeyEvent;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -10,8 +12,24 @@ public class EmulatorController implements ControllerInterface {
     private Optional<Events.ModelForController> modelEvents = Optional.empty();
     private ExecutorService taskPool;
 
+    private enum State {
+        Ready,
+        Running,
+        Stop
+    }
+
+    private State state;
+
     public EmulatorController() {
-        taskPool = Executors.newFixedThreadPool(1);
+        taskPool = Executors.newFixedThreadPool(4);
+    }
+
+    private synchronized void setState(State s) {
+        state = s;
+    }
+
+    private synchronized State getState() {
+        return state;
     }
 
     private void markAsCodeImpl(int linen) {
@@ -122,29 +140,91 @@ public class EmulatorController implements ControllerInterface {
         taskPool.execute(() -> saveByteCodeToFileImpl(path));
     }
 
+    private void contImpl() {
+        if(modelEvents.isPresent()) {
+            Events.ModelForController model = modelEvents.get();
+            setState(State.Running);
+            do {
+                try {
+                    model.sendExecuteOpcodeEvent();
+                } catch (VirtualMachineState.VMException e) {
+
+                }
+            } while(getState() == State.Running);
+            viewEvents.ifPresent(view -> updateUI(model, view));
+        }
+    }
+
     @Override
     public void cont() {
+        taskPool.execute(() -> contImpl());
+    }
 
+    private void updateUI(Events.ModelForController model, Events.ViewForController view) {
+        view.sendClearLineColorsEvent();
+        view.sendSetLineColorEvent(model.sendGetCurrentExecutingLineEvent(), Color.GREEN);
+        Registers.iterate().forEach(r ->
+                view.sendSetRegisterValueEvent(r,
+                        model.sendGetRegisterValueEvent(r)
+                )
+        );
+
+    }
+
+    private void stepInImpl() {
+        if(modelEvents.isPresent() && viewEvents.isPresent()) {
+            Events.ModelForController model = modelEvents.get();
+            Events.ViewForController view = viewEvents.get();
+            try {
+                model.sendExecuteOpcodeEvent();
+            } catch (VirtualMachineState.VMException e) {
+
+            }
+            updateUI(model, view);
+        }
     }
 
     @Override
     public void stepIn() {
+        taskPool.execute(() -> stepInImpl());
+    }
 
+    private void stepOverImpl() {
+        if(modelEvents.isPresent()) {
+            Events.ModelForController model = modelEvents.get();
+            int endIp = model.sendGetRegisterValueEvent(Registers.ip) + 2;
+            setState(State.Running);
+            do {
+                try {
+                    model.sendExecuteOpcodeEvent();
+                } catch (VirtualMachineState.VMException ignored) {
+
+                }
+            } while(model.sendGetRegisterValueEvent(Registers.ip) != endIp && getState() == State.Running);
+            viewEvents.ifPresent(viewForController -> updateUI(model, viewForController));
+        }
     }
 
     @Override
     public void stepOver() {
-
+        taskPool.execute(() -> stepOverImpl());
     }
 
     @Override
     public void stop() {
         viewEvents.ifPresent(events -> events.sendEnableAssemblerEditingEvent());
+        setState(State.Stop);
+    }
+
+    private void setRegisterValueImpl(Registers r, int value) {
+        if(getState() == State.Stop) {
+            modelEvents.ifPresent(model -> model.sendSetRegisterValueEvent(r, value));
+        }
     }
 
     @Override
     public void setRegisterValue(Registers r, int value) {
-        System.out.println(String.format("Set %s to %x", r.toString() ,value));
+        taskPool.execute(() -> setRegisterValueImpl(r, value));
     }
 
     private void runEmulationImpl() {
@@ -155,6 +235,8 @@ public class EmulatorController implements ControllerInterface {
             try {
                 model.sendStartEmulationEvent(view.sendGetAssemblyEvent());
                 view.sendDisableAssemblerEditingEvent();
+                view.sendSetLineColorEvent(model.sendGetCurrentExecutingLineEvent(), Color.GREEN);
+                setState(State.Stop);
             } catch (Assembler.AssemblerException error) {
                 view.sendSetLineColorEvent(error.linen, Color.RED);
                 view.sendSetStatusTextEvent(error.msg);
@@ -177,4 +259,8 @@ public class EmulatorController implements ControllerInterface {
         modelEvents = Optional.of(new Events.ModelForController(model));
     }
 
+    @Override
+    public void keyPressed(KeyEvent keyEvent) {
+        modelEvents.ifPresent(model -> model.sendKeyPressedEvent(keyEvent));
+    }
 }

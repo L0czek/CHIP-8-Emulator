@@ -13,5 +13,6 @@ public class Application {
         view.setupEventHandlers(controller);
         controller.setupEventHandlers(view);
         controller.setupEventHandlers(model);
+        model.setupEventHandlers(view);
     }
 }
