@@ -10,6 +10,7 @@ public interface ControllerInterface {
     void stepOver();
     void cont();
     void stop();
+    void exitEmulation();
     void setupEventHandlers(ViewInterface view);
     void setupEventHandlers(ModelInterface model);
     void markAsCode(int linen);

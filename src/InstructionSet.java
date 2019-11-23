@@ -1154,7 +1154,7 @@ public class InstructionSet {
                 state.setReg(getValueX(), key.get());
                 state.nextInstruction();
             } else {
- 
+
             }
         }
 

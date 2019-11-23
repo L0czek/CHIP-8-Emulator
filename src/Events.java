@@ -55,6 +55,9 @@ public class Events {
         public void sendKeyReleasedEvent(KeyEvent keyEvent) {
             SwingUtilities.invokeLater(() -> controller.keyReleased(keyEvent));
         }
+        public void sendExitEmulationEvent() {
+            SwingUtilities.invokeLater(() -> controller.exitEmulation());
+        }
     }
 
     public static class ViewForController {

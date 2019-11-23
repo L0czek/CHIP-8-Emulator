@@ -1,3 +1,4 @@
+import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.util.*;
@@ -109,9 +110,10 @@ public class VirtualMachineState {
             delayTimerCounter--;
         }
         if(soundTimerCounter > 0) {
-            delayTimerCounter--;
-        } else {
-            //TODO play sound
+            soundTimerCounter--;
+            if(soundTimerCounter == 0) {
+                Toolkit.getDefaultToolkit().beep();
+            }
         }
     }
     public int getDelayTimerCounter() {

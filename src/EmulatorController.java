@@ -18,29 +18,37 @@ public class EmulatorController implements ControllerInterface {
         Stop
     }
 
-    private State state;
+    private State state = State.Ready;
 
     public EmulatorController() {
         taskPool = Executors.newFixedThreadPool(4);
     }
 
     private synchronized void setState(State s) {
+        if(viewEvents.isPresent()) {
+            Events.ViewForController view = viewEvents.get();
+            switch(s) {
+                case Ready: view.sendSetStatusTextEvent("Ready"); break;
+                case Running: view.sendSetStatusTextEvent("Running"); break;
+                case Stop: view.sendSetStatusTextEvent("Stop"); break;
+            }
+        }
         state = s;
     }
 
-    private synchronized State getState() {
-        return state;
-    }
+    private synchronized State getState() { return state; }
 
     private void markAsCodeImpl(int linen) {
-        if(modelEvents.isPresent() && viewEvents.isPresent()) {
-            Events.ViewForController view = viewEvents.get();
-            Events.ModelForController model = modelEvents.get();
-            try {
-                view.sendSetAssemblyEvent(model.sendRecompileAsCode(linen, view.sendGetAssemblyEvent()));
-            } catch (Assembler.AssemblerException error) {
-                view.sendSetStatusTextEvent(error.msg);
-                view.sendSetLineColorEvent(error.linen, Color.RED);
+        if(getState() == State.Ready) {
+            if (modelEvents.isPresent() && viewEvents.isPresent()) {
+                Events.ViewForController view = viewEvents.get();
+                Events.ModelForController model = modelEvents.get();
+                try {
+                    view.sendSetAssemblyEvent(model.sendRecompileAsCode(linen, view.sendGetAssemblyEvent()));
+                } catch (Assembler.AssemblerException error) {
+                    view.sendSetStatusTextEvent(error.msg);
+                    view.sendSetLineColorEvent(error.linen, Color.RED);
+                }
             }
         }
     }
@@ -51,14 +59,16 @@ public class EmulatorController implements ControllerInterface {
     }
 
     private void markAsDataImpl(int linen) {
-        if(modelEvents.isPresent() && viewEvents.isPresent()) {
-            Events.ViewForController view = viewEvents.get();
-            Events.ModelForController model = modelEvents.get();
-            try {
-                view.sendSetAssemblyEvent(model.sendRecompileAsData(linen, view.sendGetAssemblyEvent()));
-            } catch (Assembler.AssemblerException error) {
-                view.sendSetStatusTextEvent(error.msg);
-                view.sendSetLineColorEvent(error.linen, Color.RED);
+        if(getState() == State.Ready) {
+            if (modelEvents.isPresent() && viewEvents.isPresent()) {
+                Events.ViewForController view = viewEvents.get();
+                Events.ModelForController model = modelEvents.get();
+                try {
+                    view.sendSetAssemblyEvent(model.sendRecompileAsData(linen, view.sendGetAssemblyEvent()));
+                } catch (Assembler.AssemblerException error) {
+                    view.sendSetStatusTextEvent(error.msg);
+                    view.sendSetLineColorEvent(error.linen, Color.RED);
+                }
             }
         }
     }
@@ -69,13 +79,15 @@ public class EmulatorController implements ControllerInterface {
     }
 
     private void loadAssemblyFromFileImpl(String path) {
-        if(modelEvents.isPresent()) {
-            Events.ModelForController events = modelEvents.get();
-            try {
-                String assembly = events.sendLoadAssemblyFromFileEvent(path);
-                viewEvents.ifPresent(e -> e.sendSetAssemblyEvent(assembly));
-            } catch (IOException error) {
-                viewEvents.ifPresent(e -> e.sendReportErrorEvent("Cannot read bytecode from file" + error.getMessage()));
+        if(getState() == State.Ready) {
+            if (modelEvents.isPresent()) {
+                Events.ModelForController events = modelEvents.get();
+                try {
+                    String assembly = events.sendLoadAssemblyFromFileEvent(path);
+                    viewEvents.ifPresent(e -> e.sendSetAssemblyEvent(assembly));
+                } catch (IOException error) {
+                    viewEvents.ifPresent(e -> e.sendReportErrorEvent("Cannot read bytecode from file" + error.getMessage()));
+                }
             }
         }
     }
@@ -86,13 +98,15 @@ public class EmulatorController implements ControllerInterface {
     }
 
     private void loadBytecodeFromFileImpl(String path) {
-        if(modelEvents.isPresent()) {
-            Events.ModelForController events = modelEvents.get();
-            try {
-                String assembly = events.sendLoadByteCodeFromFileEvent(path);
-                viewEvents.ifPresent(e -> e.sendSetAssemblyEvent(assembly));
-            } catch (IOException error) {
-                viewEvents.ifPresent(e -> e.sendReportErrorEvent("Cannot read bytecode from file" + error.getMessage()));
+        if(getState() == State.Ready) {
+            if (modelEvents.isPresent()) {
+                Events.ModelForController events = modelEvents.get();
+                try {
+                    String assembly = events.sendLoadByteCodeFromFileEvent(path);
+                    viewEvents.ifPresent(e -> e.sendSetAssemblyEvent(assembly));
+                } catch (IOException error) {
+                    viewEvents.ifPresent(e -> e.sendReportErrorEvent("Cannot read bytecode from file" + error.getMessage()));
+                }
             }
         }
     }
@@ -103,13 +117,15 @@ public class EmulatorController implements ControllerInterface {
     }
 
     private void saveAssemblyToFileImpl(String path) {
-        if(modelEvents.isPresent() && viewEvents.isPresent()) {
-            Events.ModelForController model = modelEvents.get();
-            Events.ViewForController view = viewEvents.get();
-            try {
-                model.sendSaveAssemblyToFileEvent(path, view.sendGetAssemblyEvent());
-            } catch (IOException error) {
-                view.sendReportErrorEvent("Cannot write to file: " + error.getMessage());
+        if(getState() == State.Ready) {
+            if (modelEvents.isPresent() && viewEvents.isPresent()) {
+                Events.ModelForController model = modelEvents.get();
+                Events.ViewForController view = viewEvents.get();
+                try {
+                    model.sendSaveAssemblyToFileEvent(path, view.sendGetAssemblyEvent());
+                } catch (IOException error) {
+                    view.sendReportErrorEvent("Cannot write to file: " + error.getMessage());
+                }
             }
         }
     }
@@ -120,17 +136,19 @@ public class EmulatorController implements ControllerInterface {
     }
 
     private void saveByteCodeToFileImpl(String path) {
-        if(modelEvents.isPresent() && viewEvents.isPresent()) {
-            Events.ModelForController model = modelEvents.get();
-            Events.ViewForController view = viewEvents.get();
-            try {
-                view.sendClearLineColorsEvent();
-                model.sendSaveByteCodeToFileEvent(path, view.sendGetAssemblyEvent());
-            } catch (Assembler.AssemblerException error) {
-                view.sendSetLineColorEvent(error.linen, Color.RED);
-                view.sendSetStatusTextEvent(error.msg);
-            } catch (IOException error) {
-                view.sendReportErrorEvent("Cannot save to file: " + error.getMessage());
+        if(getState() == State.Ready) {
+            if (modelEvents.isPresent() && viewEvents.isPresent()) {
+                Events.ModelForController model = modelEvents.get();
+                Events.ViewForController view = viewEvents.get();
+                try {
+                    view.sendClearLineColorsEvent();
+                    model.sendSaveByteCodeToFileEvent(path, view.sendGetAssemblyEvent());
+                } catch (Assembler.AssemblerException error) {
+                    view.sendSetLineColorEvent(error.linen, Color.RED);
+                    view.sendSetStatusTextEvent(error.msg);
+                } catch (IOException error) {
+                    view.sendReportErrorEvent("Cannot save to file: " + error.getMessage());
+                }
             }
         }
     }
@@ -141,20 +159,19 @@ public class EmulatorController implements ControllerInterface {
     }
 
     private void contImpl() {
-        if(modelEvents.isPresent()) {
-            Events.ModelForController model = modelEvents.get();
-            if(getState() == State.Running) {
-                return;
-            }
-            setState(State.Running);
-            do {
-                try {
-                    model.sendExecuteOpcodeEvent();
-                } catch (VirtualMachineState.VMException e) {
+        if(getState() == State.Stop) {
+            if (modelEvents.isPresent()) {
+                Events.ModelForController model = modelEvents.get();
+                setState(State.Running);
+                do {
+                    try {
+                        model.sendExecuteOpcodeEvent();
+                    } catch (VirtualMachineState.VMException e) {
 
-                }
-            } while(getState() == State.Running);
-            viewEvents.ifPresent(view -> updateUI(model, view));
+                    }
+                } while (getState() == State.Running);
+                viewEvents.ifPresent(view -> updateUI(model, view));
+            }
         }
     }
 
@@ -175,49 +192,56 @@ public class EmulatorController implements ControllerInterface {
     }
 
     private void stepInImpl() {
-        if(modelEvents.isPresent() && viewEvents.isPresent()) {
-            Events.ModelForController model = modelEvents.get();
-            Events.ViewForController view = viewEvents.get();
-            try {
-                model.sendExecuteOpcodeEvent();
-            } catch (VirtualMachineState.VMException e) {
+        if(getState() == State.Stop) {
+            if (modelEvents.isPresent() && viewEvents.isPresent()) {
+                Events.ModelForController model = modelEvents.get();
+                Events.ViewForController view = viewEvents.get();
+                try {
+                    model.sendExecuteOpcodeEvent();
+                } catch (VirtualMachineState.VMException e) {
 
+                }
+                updateUI(model, view);
             }
-            updateUI(model, view);
         }
     }
 
     @Override
     public void stepIn() {
-        if(getState() != State.Running)
-            taskPool.execute(() -> stepInImpl());
+        taskPool.execute(() -> stepInImpl());
     }
 
     private void stepOverImpl() {
-        if(modelEvents.isPresent()) {
-            Events.ModelForController model = modelEvents.get();
-            int endIp = model.sendGetRegisterValueEvent(Registers.ip) + 2;
-            setState(State.Running);
-            do {
-                try {
-                    model.sendExecuteOpcodeEvent();
-                } catch (VirtualMachineState.VMException ignored) {
+        if(getState() == State.Stop) {
+            if (modelEvents.isPresent()) {
+                Events.ModelForController model = modelEvents.get();
+                int endIp = model.sendGetRegisterValueEvent(Registers.ip) + 2;
+                setState(State.Running);
+                do {
+                    try {
+                        model.sendExecuteOpcodeEvent();
+                    } catch (VirtualMachineState.VMException ignored) {
 
-                }
-            } while(model.sendGetRegisterValueEvent(Registers.ip) != endIp && getState() == State.Running);
-            viewEvents.ifPresent(viewForController -> updateUI(model, viewForController));
+                    }
+                } while (model.sendGetRegisterValueEvent(Registers.ip) != endIp && getState() == State.Running);
+                viewEvents.ifPresent(viewForController -> updateUI(model, viewForController));
+                setState(State.Stop);
+            }
         }
     }
 
     @Override
     public void stepOver() {
-        taskPool.execute(() -> stepOverImpl());
+        taskPool.execute(this::stepOverImpl);
+    }
+
+    public void stopImpl() {
+        setState(State.Stop);
     }
 
     @Override
     public void stop() {
-        viewEvents.ifPresent(events -> events.sendEnableAssemblerEditingEvent());
-        setState(State.Stop);
+        taskPool.execute(this::stopImpl);
     }
 
     private void setRegisterValueImpl(Registers r, int value) {
@@ -232,18 +256,20 @@ public class EmulatorController implements ControllerInterface {
     }
 
     private void runEmulationImpl() {
-        if(modelEvents.isPresent() && viewEvents.isPresent()) {
-            Events.ModelForController model = modelEvents.get();
-            Events.ViewForController view = viewEvents.get();
-            view.sendClearLineColorsEvent();
-            try {
-                model.sendStartEmulationEvent(view.sendGetAssemblyEvent());
-                view.sendDisableAssemblerEditingEvent();
-                view.sendSetLineColorEvent(model.sendGetCurrentExecutingLineEvent(), Color.GREEN);
-                setState(State.Stop);
-            } catch (Assembler.AssemblerException error) {
-                view.sendSetLineColorEvent(error.linen, Color.RED);
-                view.sendSetStatusTextEvent(error.msg);
+        if(getState() == State.Ready) {
+            if (modelEvents.isPresent() && viewEvents.isPresent()) {
+                Events.ModelForController model = modelEvents.get();
+                Events.ViewForController view = viewEvents.get();
+                view.sendClearLineColorsEvent();
+                try {
+                    model.sendStartEmulationEvent(view.sendGetAssemblyEvent());
+                    view.sendDisableAssemblerEditingEvent();
+                    view.sendSetLineColorEvent(model.sendGetCurrentExecutingLineEvent(), Color.GREEN);
+                    setState(State.Stop);
+                } catch (Assembler.AssemblerException error) {
+                    view.sendSetLineColorEvent(error.linen, Color.RED);
+                    view.sendSetStatusTextEvent(error.msg);
+                }
             }
         }
     }
@@ -251,6 +277,24 @@ public class EmulatorController implements ControllerInterface {
     @Override
     public void runEmulation() {
         taskPool.execute(this::runEmulationImpl);
+    }
+
+    public void exitEmulationImpl() {
+        if(getState() == State.Stop || getState() == State.Running) {
+            setState(State.Ready);
+            if(viewEvents.isPresent()) {
+                Events.ViewForController view = viewEvents.get();
+                view.sendEnableAssemblerEditingEvent();
+                view.sendClearScreenEvent();
+                view.sendClearLineColorsEvent();
+            }
+
+        }
+    }
+
+    @Override
+    public void exitEmulation() {
+        taskPool.execute(this::exitEmulationImpl);
     }
 
     @Override

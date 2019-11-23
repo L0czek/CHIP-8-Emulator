@@ -41,26 +41,22 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
         setupAssemblyView();
         setupDebuggerView();
 
-        addKeyListener(new KeyListener() {
-            @Override
-            public void keyTyped(KeyEvent keyEvent) {
 
-            }
-
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(new KeyEventDispatcher() {
             @Override
-            public void keyPressed(KeyEvent keyEvent) {
-                onKeyPress(keyEvent);
-            }
-
-            @Override
-            public void keyReleased(KeyEvent keyEvent) {
-                onKeyRelease(keyEvent);
+            public boolean dispatchKeyEvent(KeyEvent keyEvent) {
+                if(keyEvent.getID() == KeyEvent.KEY_PRESSED) {
+                    onKeyPress(keyEvent);
+                } else if(keyEvent.getID() == KeyEvent.KEY_RELEASED) {
+                    onKeyRelease(keyEvent);
+                }
+                return false;
             }
         });
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         pack();
-        setStatusText("READY");
+        setStatusText("Ready");
         setVisible(true);
     }
 
@@ -149,7 +145,6 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
     @Override
     public void reportError(String msg) {
         JOptionPane.showMessageDialog(null, msg);
-        System.out.println("end");
     }
 
     @Override
@@ -368,6 +363,7 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
         private JButton continueButton = null;
         private JButton stopButton = null;
         private JButton runButton = null;
+        private JButton exitButton = null;
 
         ArrayList<JLabel> registerLabels = null;
         ArrayList<JLabel> registerValues = null;
@@ -408,12 +404,14 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
             continueButton = new JButton("Continue");
             stopButton = new JButton("STOP");
             runButton = new JButton("RUN");
+            exitButton = new JButton("EXIT");
 
             stepInButton.addActionListener(event -> stepIn());
             stepOverButton.addActionListener(event -> stepOver());
             continueButton.addActionListener(event -> cont());
             stopButton.addActionListener(event -> stop());
             runButton.addActionListener(event -> run());
+            exitButton.addActionListener(event -> exit());
 
             registerLabels = new ArrayList<>();
             registerValues = new ArrayList<>();
@@ -428,6 +426,7 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
             controlPanel.add(stepOverButton);
             controlPanel.add(continueButton);
             controlPanel.add(stopButton);
+            controlPanel.add(exitButton);
 
             add(screen, makeLayoutConstrains(0, 0));
             add(controlPanel, makeLayoutConstrains(0, 1));
@@ -452,7 +451,6 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
                 valueToSet.addMouseListener(new MouseListener() {
                     @Override
                     public void mouseClicked(MouseEvent mouseEvent) {
-                        System.out.println(mouseEvent);
                         valueToSet.setText("");
                     }
 
@@ -526,6 +524,10 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
 
         private void stop() {
             events.ifPresent(Events.ForView::sendStopEvent);
+        }
+
+        private void exit() {
+            events.ifPresent(Events.ForView::sendExitEmulationEvent);
         }
 
         private void setReg(int n, int value) {
