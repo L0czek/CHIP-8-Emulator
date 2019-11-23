@@ -1,5 +1,7 @@
+import java.util.Optional;
+
 public class InstructionSet {
-    public static class Call extends InstructionTypes.Type_NNN implements Instruction{
+    public static class Call extends InstructionTypes.Type_NNN implements Instruction {
         public Call(short opcode) {
             super(opcode);
         }
@@ -20,7 +22,7 @@ public class InstructionSet {
 
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         @Override
@@ -40,6 +42,46 @@ public class InstructionSet {
             return getValueNNN();
         }
     }
+
+    public static class DisplayClear extends InstructionTypes.Type_NoArg implements Instruction {
+        public DisplayClear(short opcode) {
+
+        }
+
+        public DisplayClear(String[] assemblyArgs) {
+
+        }
+
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
+
+        @Override
+        public void execute(VirtualMachineState state) {
+            state.clearScreen();
+            state.nextInstruction();
+        }
+
+        @Override
+        public String disassemble() {
+            return String.format("%s\n", getMnemonic());
+        }
+
+        @Override
+        public short assemble() {
+            return (short) getOpcode(getMask());
+        }
+
+        public static int getMask() {
+            return 0x00E0;
+        }
+
+        public static String getMnemonic() {
+            return "clear";
+        }
+    }
+
 
     public static class Return extends InstructionTypes.Type_NoArg implements Instruction {
         public Return(short opcode) {
@@ -67,7 +109,7 @@ public class InstructionSet {
 
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
@@ -105,7 +147,7 @@ public class InstructionSet {
 
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
@@ -121,10 +163,12 @@ public class InstructionSet {
         public CallWordPtr(short opcode) {
             super(opcode);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         public CallWordPtr(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -134,14 +178,13 @@ public class InstructionSet {
             state.callSubroutine(getValueNNN() & 0xfff);
         }
 
-        @Override
         public String disassemble() {
             return String.format("%s 0x%X\n", getMnemonic(), getValueNNN());
         }
 
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
@@ -157,10 +200,12 @@ public class InstructionSet {
         public SkipEqualImm(short opcode) {
             super(opcode);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         public SkipEqualImm(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -168,7 +213,7 @@ public class InstructionSet {
         @Override
         public void execute(VirtualMachineState state) {
             int reg = state.getReg(getValueX());
-            if(reg == getValueNN()) {
+            if (reg == (getValueNN() & 0xff)) {
                 state.skipInstruction();
             } else {
                 state.nextInstruction();
@@ -182,7 +227,7 @@ public class InstructionSet {
 
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
@@ -202,14 +247,16 @@ public class InstructionSet {
         public SkipNotEqualImm(String[] assemblyArgs) {
             super(assemblyArgs);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         @Override
         public void execute(VirtualMachineState state) {
             int reg = state.getReg(getValueX());
-            if(reg != getValueNN()) {
+            if (reg != (getValueNN() & 0xff)) {
                 state.skipInstruction();
             } else {
                 state.nextInstruction();
@@ -220,9 +267,10 @@ public class InstructionSet {
         public String disassemble() {
             return String.format("%s v%d, 0x%X\n", getMnemonic(), getValueX(), 0xff & getValueNN());
         }
+
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
@@ -242,15 +290,17 @@ public class InstructionSet {
         public SkipEqualReg(String[] assemblyArgs) {
             super(assemblyArgs);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         @Override
         public void execute(VirtualMachineState state) {
             int reg1 = state.getReg(getValueX());
             int reg2 = state.getReg(getValueY());
-            if(reg1 == reg2) {
+            if (reg1 == reg2) {
                 state.skipInstruction();
             } else {
                 state.nextInstruction();
@@ -259,11 +309,12 @@ public class InstructionSet {
 
         @Override
         public String disassemble() {
-            return  String.format("%s v%d, v%d\n", getMnemonic(), getValueX(), getValueY());
+            return String.format("%s v%d, v%d\n", getMnemonic(), getValueX(), getValueY());
         }
+
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
@@ -279,10 +330,12 @@ public class InstructionSet {
         public LoadImm(short opcode) {
             super(opcode);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         public LoadImm(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -297,9 +350,10 @@ public class InstructionSet {
         public String disassemble() {
             return String.format("%s v%d, 0x%X\n", getMnemonic(), getValueX(), 0xff & getValueNN());
         }
+
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
@@ -315,17 +369,19 @@ public class InstructionSet {
         public AddImm(short opcode) {
             super(opcode);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         public AddImm(String[] assemblyArgs) {
             super(assemblyArgs);
         }
 
         @Override
         public void execute(VirtualMachineState state) {
-            state.setReg(getValueX(), (byte)(state.getReg(getValueX()) + getValueNN()));
+            state.setReg(getValueX(), 0xff & (state.getReg(getValueX()) + getValueNN()));
             state.nextInstruction();
         }
 
@@ -336,7 +392,7 @@ public class InstructionSet {
 
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
@@ -352,10 +408,12 @@ public class InstructionSet {
         public Mov(short opcode) {
             super(opcode);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         public Mov(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -370,9 +428,10 @@ public class InstructionSet {
         public String disassemble() {
             return String.format("%s v%d, v%d\n", getMnemonic(), getValueX(), getValueY());
         }
+
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
@@ -388,17 +447,19 @@ public class InstructionSet {
         public Or(short opcode) {
             super(opcode);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         public Or(String[] assemblyArgs) {
             super(assemblyArgs);
         }
 
         @Override
         public void execute(VirtualMachineState state) {
-            state.setReg(getValueX(), (byte)(state.getReg(getValueX()) | state.getReg(getValueY())));
+            state.setReg(getValueX(), 0xFF & (state.getReg(getValueX()) | state.getReg(getValueY())));
             state.nextInstruction();
         }
 
@@ -406,9 +467,10 @@ public class InstructionSet {
         public String disassemble() {
             return String.format("%s v%d, v%d\n", getMnemonic(), getValueX(), getValueY());
         }
+
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
@@ -424,17 +486,19 @@ public class InstructionSet {
         public And(short opcode) {
             super(opcode);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         public And(String[] assemblyArgs) {
             super(assemblyArgs);
         }
 
         @Override
         public void execute(VirtualMachineState state) {
-            state.setReg(getValueX(), (byte)(state.getReg(getValueX()) & state.getReg(getValueY())));
+            state.setReg(getValueX(), 0xff & (state.getReg(getValueX()) & state.getReg(getValueY())));
             state.nextInstruction();
         }
 
@@ -445,7 +509,7 @@ public class InstructionSet {
 
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
@@ -461,17 +525,19 @@ public class InstructionSet {
         public Xor(short opcode) {
             super(opcode);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         public Xor(String[] assemblyArgs) {
             super(assemblyArgs);
         }
 
         @Override
         public void execute(VirtualMachineState state) {
-            state.setReg(getValueX(), (state.getReg(getValueX()) ^ state.getReg(getValueY())));
+            state.setReg(getValueX(), 0xff & (state.getReg(getValueX()) ^ state.getReg(getValueY())));
             state.nextInstruction();
         }
 
@@ -482,7 +548,7 @@ public class InstructionSet {
 
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
@@ -498,10 +564,12 @@ public class InstructionSet {
         public Add(short opcode) {
             super(opcode);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         public Add(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -509,8 +577,10 @@ public class InstructionSet {
         @Override
         public void execute(VirtualMachineState state) {
             int result = state.getReg(getValueX()) + state.getReg(getValueY());
-            if(result > 0xff) {
-                state.setReg(0x15, 1);
+            if (result > 0xff) {
+                state.setReg(15, 1);
+            } else {
+                state.setReg(15, 0);
             }
             state.setReg(getValueX(), result & 0xff);
             state.nextInstruction();
@@ -523,7 +593,7 @@ public class InstructionSet {
 
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
@@ -544,15 +614,19 @@ public class InstructionSet {
         public Sub(String[] assemblyArgs) {
             super(assemblyArgs);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         @Override
         public void execute(VirtualMachineState state) {
             int result = state.getReg(getValueX()) - state.getReg(getValueY());
-            if(result < 0) {
+            if (result < 0) {
                 state.setReg(15, 1);
+            } else {
+                state.setReg(15, 0);
             }
             state.setReg(getValueX(), result & 0xff);
             state.nextInstruction();
@@ -565,7 +639,7 @@ public class InstructionSet {
 
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
@@ -585,14 +659,16 @@ public class InstructionSet {
         public RShift1(String[] assemblyArgs) {
             super(assemblyArgs);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         @Override
         public void execute(VirtualMachineState state) {
             state.setReg(15, state.getReg(getValueX()) & 1);
-            state.setReg(getValueX(), state.getReg(getValueX()) >> 1);
+            state.setReg(getValueX(), state.getReg(getValueX()) >>> 1);
             state.nextInstruction();
         }
 
@@ -603,7 +679,7 @@ public class InstructionSet {
 
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
@@ -619,10 +695,12 @@ public class InstructionSet {
         public SubR(short opcode) {
             super(opcode);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         public SubR(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -630,8 +708,10 @@ public class InstructionSet {
         @Override
         public void execute(VirtualMachineState state) {
             int result = state.getReg(getValueY()) - state.getReg(getValueX());
-            if(result < 0) {
+            if (result < 0) {
                 state.setReg(15, 1);
+            } else {
+                state.setReg(15, 0);
             }
             state.setReg(getValueX(), result & 0xff);
             state.nextInstruction();
@@ -644,7 +724,7 @@ public class InstructionSet {
 
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
@@ -660,10 +740,12 @@ public class InstructionSet {
         public LShift1(short opcode) {
             super(opcode);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         public LShift1(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -683,7 +765,7 @@ public class InstructionSet {
 
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
@@ -699,17 +781,19 @@ public class InstructionSet {
         public SkipNotEqualReg(short opcode) {
             super(opcode);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         public SkipNotEqualReg(String[] assemblyArgs) {
             super(assemblyArgs);
         }
 
         @Override
         public void execute(VirtualMachineState state) {
-            if(state.getReg(getValueX()) != state.getReg(getValueY())) {
+            if (state.getReg(getValueX()) != state.getReg(getValueY())) {
                 state.skipInstruction();
             } else {
                 state.nextInstruction();
@@ -723,8 +807,9 @@ public class InstructionSet {
 
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
+
         public static int getMask() {
             return 0x9000;
         }
@@ -738,10 +823,12 @@ public class InstructionSet {
         public LoadRegI(short opcode) {
             super(opcode);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         public LoadRegI(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -759,7 +846,7 @@ public class InstructionSet {
 
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
@@ -779,14 +866,15 @@ public class InstructionSet {
         public BranchRelv0(String[] assemblyArgs) {
             super(assemblyArgs);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         @Override
         public void execute(VirtualMachineState state) {
             state.jump(state.getReg(0) + getValueNNN());
-            state.nextInstruction();
         }
 
         @Override
@@ -796,7 +884,7 @@ public class InstructionSet {
 
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
@@ -812,28 +900,30 @@ public class InstructionSet {
         public Rand(short opcode) {
             super(opcode);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         public Rand(String[] assemblyArgs) {
             super(assemblyArgs);
         }
 
         @Override
         public void execute(VirtualMachineState state) {
-            state.setReg(getValueX(), (int)(Math.random() * 0x100) & 0xff & getValueNN());
+            state.setReg(getValueX(), (int) (Math.random() * 0x100) & 0xff & getValueNN());
             state.nextInstruction();
         }
 
         @Override
         public String disassemble() {
-            return String.format("%s v%d, 0x%X\n", getMnemonic(), getValueX()&0xff, 0xff & getValueNN());
+            return String.format("%s v%d, 0x%X\n", getMnemonic(), getValueX() & 0xff, 0xff & getValueNN());
         }
 
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
@@ -845,27 +935,92 @@ public class InstructionSet {
         }
     }
 
-    public static class DisplayClear extends InstructionTypes.Type_NoArg implements Instruction {
-        public DisplayClear(short opcode) {
-
+    public static class DrawSprite extends InstructionTypes.Type_XYN implements Instruction {
+        public DrawSprite(short opcode) {
+            super(opcode);
         }
 
-        public DisplayClear(String[] assemblyArgs) {
-
-        }
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
+        public DrawSprite(String[] assemblyArgs) {
+            super(assemblyArgs);
+        }
+
         @Override
         public void execute(VirtualMachineState state) {
-            state.clearScreen();
+            int x = state.getReg(getValueX()) % 64;
+            int y = state.getReg(getValueY()) % 32;
+            int n = getValueN();
+            int address = state.getRegI();
+            boolean flipped = false;
+            for (int i = 0; i < n; ++i) {
+                int sprite = state.memoryGetByte(address + i) & 0xff;
+                for (int j = 0; j < 8; ++j) {
+                    int bit = (sprite >> (7 - j)) & 1;
+                    if (bit != 0 && state.getPixel(x + j, y) == 0xffffff) {
+                        flipped = true;
+                    }
+                    int cordX = x + j;
+                    int cordY = y + i;
+                    int currentValue = state.getPixel(cordX, cordY) & 0x01;
+                    int newValue = 0xffffffff * (currentValue ^ bit);
+                    state.setPixel(cordX, cordY, newValue);
+                }
+            }
+            if (flipped) {
+                state.setReg(15, 1);
+            } else {
+                state.setReg(15, 0);
+            }
+            state.updateScreen();
             state.nextInstruction();
         }
 
         @Override
         public String disassemble() {
-            return String.format("%s\n", getMnemonic());
+            return String.format("%s v%d, v%d, 0x%X\n", getMnemonic(), getValueX(), getValueY(), getValueN());
+        }
+
+        @Override
+        public short assemble() {
+            return (short) getOpcode(getMask());
+        }
+
+        public static int getMask() {
+            return 0xD000;
+        }
+
+        public static String getMnemonic() {
+            return "draw";
+        }
+    }
+
+    public static class SkipEqualKey extends InstructionTypes.Type_X implements Instruction {
+
+        public SkipEqualKey(short opcode) {
+            super(opcode);
+        }
+
+        public SkipEqualKey(String[] assemblyArgs) {
+            super(assemblyArgs);
+        }
+
+        @Override
+        public String disassemble() {
+            return String.format("%s v%d\n", getMnemonic(), getValueX());
+        }
+
+        @Override
+        public void execute(VirtualMachineState state) {
+            int value = state.getReg(getValueX());
+            if(state.isKeyPressed(value)) {
+                state.skipInstruction();
+            } else {
+                state.nextInstruction();
+            }
         }
 
         @Override
@@ -873,12 +1028,61 @@ public class InstructionSet {
             return (short)getOpcode(getMask());
         }
 
-        public static int getMask() {
-            return 0x00E0;
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
         }
 
         public static String getMnemonic() {
-            return "clear";
+            return "skeqkey";
+        }
+
+        public static int getMask() {
+            return 0xE09E;
+        }
+    }
+
+    public static class SkipNotEqualKey extends InstructionTypes.Type_X implements Instruction {
+
+        public SkipNotEqualKey(short opcode) {
+            super(opcode);
+        }
+
+        public SkipNotEqualKey(String[] assemblyArgs) {
+            super(assemblyArgs);
+        }
+
+        @Override
+        public String disassemble() {
+            return String.format("%s v%d\n", getMnemonic(), getValueX());
+        }
+
+        @Override
+        public void execute(VirtualMachineState state) {
+            int value = state.getReg(getValueX());
+            if(!state.isKeyPressed(value)) {
+                state.skipInstruction();
+            } else {
+                state.nextInstruction();
+            }
+        }
+
+        @Override
+        public short assemble() {
+            return (short)getOpcode(getMask());
+        }
+
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
+
+        public static int getMask() {
+            return 0xE0A1;
+        }
+
+        public static String getMnemonic() {
+            return "skneqkey";
         }
     }
 
@@ -890,10 +1094,12 @@ public class InstructionSet {
         public GetDelayTimerCounter(String[] assemblyArgs) {
             super(assemblyArgs);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         @Override
         public void execute(VirtualMachineState state) {
             state.setReg(getValueX(), state.getDelayTimerCounter());
@@ -907,7 +1113,7 @@ public class InstructionSet {
 
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
@@ -919,14 +1125,60 @@ public class InstructionSet {
         }
     }
 
-    public static class SetDelayTimerCounter extends InstructionTypes.Type_X implements Instruction {
-        public SetDelayTimerCounter(short opcode) {
+    public static class GetKey extends InstructionTypes.Type_X implements Instruction {
+        public GetKey(short opcode) {
             super(opcode);
         }
+
+        public GetKey(String[] assemblyArgs) {
+            super(assemblyArgs);
+        }
+
+        public static int getMask() {
+            return 0xF00A;
+        }
+
+        public static String getMnemonic() {
+            return "gkey";
+        }
+
+        @Override
+        public String disassemble() {
+            return String.format("%s v%d\n", getMnemonic(), getValueX());
+        }
+
+        @Override
+        public void execute(VirtualMachineState state) {
+            Optional<Integer> key = state.getKey();
+            if(key.isPresent()) {
+                state.setReg(getValueX(), key.get());
+                state.nextInstruction();
+            } else {
+ 
+            }
+        }
+
+        @Override
+        public short assemble() {
+            return (short)getOpcode(getMask());
+        }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+    }
+
+    public static class SetDelayTimerCounter extends InstructionTypes.Type_X implements Instruction {
+        public SetDelayTimerCounter(short opcode) {
+            super(opcode);
+        }
+
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
+
         public SetDelayTimerCounter(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -944,12 +1196,13 @@ public class InstructionSet {
 
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
             return 0xF015;
         }
+
         public static String getMnemonic() {
             return "sdtc";
         }
@@ -963,10 +1216,12 @@ public class InstructionSet {
         public SetSoundTimerCounter(String[] assemblyArgs) {
             super(assemblyArgs);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         @Override
         public void execute(VirtualMachineState state) {
             state.setSoundTimerCounter(state.getReg(getValueX()));
@@ -980,12 +1235,13 @@ public class InstructionSet {
 
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
             return 0xF018;
         }
+
         public static String getMnemonic() {
             return "sstc";
         }
@@ -995,17 +1251,25 @@ public class InstructionSet {
         public AddRegI(short opcode) {
             super(opcode);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         public AddRegI(String[] assemblyArgs) {
             super(assemblyArgs);
         }
 
         @Override
         public void execute(VirtualMachineState state) {
-            state.setRegI(state.getRegI() + state.getReg(getValueX()));
+            int value = state.getRegI() + state.getReg(getValueX());
+            if(value > 0xfff) {
+                state.setReg(15 ,1);
+            } else {
+                state.setReg(15 ,0);
+            }
+            state.setRegI(value);
             state.nextInstruction();
         }
 
@@ -1016,14 +1280,55 @@ public class InstructionSet {
 
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
             return 0xF01E;
         }
+
         public static String getMnemonic() {
             return "addI";
+        }
+    }
+
+    public static class GetSpriteAddress extends InstructionTypes.Type_X implements Instruction {
+        public GetSpriteAddress(short opcode) {
+            super(opcode);
+        }
+
+        public GetSpriteAddress(String[] assemblyArgs) {
+            super(assemblyArgs);
+        }
+
+
+        @Override
+        public String disassemble() {
+            return String.format("%s v%d\n", getMnemonic(), getValueX());
+        }
+
+        @Override
+        public void execute(VirtualMachineState state) {
+            state.setRegI(state.getSpriteAddress(getValueX()));
+            state.nextInstruction();
+        }
+
+        @Override
+        public short assemble() {
+            return (short)getOpcode(getMask());
+        }
+
+        @Override
+        public void accept(InstructionVisitor.Visitor visitor) {
+            visitor.visit(this);
+        }
+
+        public static int getMask() {
+            return 0xF029;
+        }
+
+        public static String getMnemonic() {
+            return "gsprite";
         }
     }
 
@@ -1031,10 +1336,12 @@ public class InstructionSet {
         public StoreBCD(short opcode) {
             super(opcode);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         public StoreBCD(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -1043,9 +1350,9 @@ public class InstructionSet {
         public void execute(VirtualMachineState state) {
             int value = state.getReg(getValueX());
             int address = state.getRegI();
-            state.memorySetByte(address + 0, (byte)((value / 100) & 0xff));
-            state.memorySetByte(address + 1, (byte)(((value / 10) % 10) & 0xff));
-            state.memorySetByte(address + 2, (byte)((value % 10) & 0xff));
+            state.memorySetByte(address + 0, (byte) ((value / 100) & 0xff));
+            state.memorySetByte(address + 1, (byte) (((value / 10) % 10) & 0xff));
+            state.memorySetByte(address + 2, (byte) ((value % 10) & 0xff));
             state.nextInstruction();
         }
 
@@ -1056,12 +1363,13 @@ public class InstructionSet {
 
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
             return 0xF033;
         }
+
         public static String getMnemonic() {
             return "sbcd";
         }
@@ -1075,16 +1383,18 @@ public class InstructionSet {
         public RegDump(String[] assemblyArgs) {
             super(assemblyArgs);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         @Override
         public void execute(VirtualMachineState state) {
             int address = state.getRegI();
             int end = getValueX();
-            for(int i=0; i < end; ++i) {
-                state.memorySetByte(address + i, (byte)(0xff & state.getReg(i)));
+            for (int i = 0; i < end; ++i) {
+                state.memorySetByte(address + i, (byte) (0xff & state.getReg(i)));
             }
             state.nextInstruction();
         }
@@ -1096,12 +1406,13 @@ public class InstructionSet {
 
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
             return 0xF055;
         }
+
         public static String getMnemonic() {
             return "regdump";
         }
@@ -1111,10 +1422,12 @@ public class InstructionSet {
         public RegLoad(short opcode) {
             super(opcode);
         }
+
         @Override
         public void accept(InstructionVisitor.Visitor visitor) {
             visitor.visit(this);
         }
+
         public RegLoad(String[] assemblyArgs) {
             super(assemblyArgs);
         }
@@ -1123,7 +1436,7 @@ public class InstructionSet {
         public void execute(VirtualMachineState state) {
             int address = state.getRegI();
             int end = getValueX();
-            for(int i=0; i < end; ++i) {
+            for (int i = 0; i < end; ++i) {
                 state.setReg(i, state.memoryGetByte(address + i) & 0xff);
             }
             state.nextInstruction();
@@ -1136,75 +1449,15 @@ public class InstructionSet {
 
         @Override
         public short assemble() {
-            return (short)getOpcode(getMask());
+            return (short) getOpcode(getMask());
         }
 
         public static int getMask() {
             return 0xF065;
         }
+
         public static String getMnemonic() {
             return "regload";
-        }
-    }
-
-    public static class DrawSprite extends InstructionTypes.Type_XYN implements Instruction {
-        public DrawSprite(short opcode) {
-            super(opcode);
-        }
-        @Override
-        public void accept(InstructionVisitor.Visitor visitor) {
-            visitor.visit(this);
-        }
-
-        public DrawSprite(String[] assemblyArgs) {
-            super(assemblyArgs);
-        }
-
-        @Override
-        public void execute(VirtualMachineState state) {
-            int x = state.getReg(getValueX()) % 64;
-            int y = state.getReg(getValueY()) % 32;
-            int n = getValueN();
-            int address = state.getRegI();
-            boolean flipped = false;
-            for(int i=0; i < n; ++i) {
-                int sprite = state.memoryGetByte(address + i) & 0xff;
-                for(int j=0; j < 8; ++j) {
-                    int bit = (sprite >> (7-j)) & 1;
-                    if(bit != 0 && state.getPixel(x + j, y) == 0xffffff) {
-                        flipped = true;
-                    }
-                    int cordX = x + j;
-                    int cordY = y + i;
-                    int currentValue = state.getPixel(cordX, cordY) & 0x01;
-                    int newValue = 0xffffffff * (currentValue ^ bit);
-                    state.setPixel(cordX, cordY, newValue);
-                }
-            }
-            if(flipped) {
-                state.setReg(15, 1);
-            } else {
-                state.setReg(15, 0);
-            }
-            state.updateScreen();
-            state.nextInstruction();
-        }
-
-        @Override
-        public String disassemble() {
-            return String.format("%s v%d, v%d, 0x%X\n", getMnemonic(), getValueX(), getValueY(), getValueN());
-        }
-
-        @Override
-        public short assemble() {
-            return (short)getOpcode(getMask());
-        }
-
-        public static int getMask() {
-            return 0xD000;
-        }
-        public static String getMnemonic() {
-            return "draw";
         }
     }
 }

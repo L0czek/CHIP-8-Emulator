@@ -16,4 +16,5 @@ public interface ControllerInterface {
     void markAsData(int linen);
     void setRegisterValue(Registers r, int value);
     void keyPressed(KeyEvent keyEvent);
+    void keyReleased(KeyEvent keyEvent);
 }

@@ -116,7 +116,7 @@ public class EmulatorController implements ControllerInterface {
 
     @Override
     public void saveAssemblyToFile(String path) {
-        taskPool.execute(() -> saveByteCodeToFileImpl(path));
+        taskPool.execute(() -> saveAssemblyToFileImpl(path));
     }
 
     private void saveByteCodeToFileImpl(String path) {
@@ -143,6 +143,9 @@ public class EmulatorController implements ControllerInterface {
     private void contImpl() {
         if(modelEvents.isPresent()) {
             Events.ModelForController model = modelEvents.get();
+            if(getState() == State.Running) {
+                return;
+            }
             setState(State.Running);
             do {
                 try {
@@ -186,7 +189,8 @@ public class EmulatorController implements ControllerInterface {
 
     @Override
     public void stepIn() {
-        taskPool.execute(() -> stepInImpl());
+        if(getState() != State.Running)
+            taskPool.execute(() -> stepInImpl());
     }
 
     private void stepOverImpl() {
@@ -261,6 +265,11 @@ public class EmulatorController implements ControllerInterface {
 
     @Override
     public void keyPressed(KeyEvent keyEvent) {
-        modelEvents.ifPresent(model -> model.sendKeyPressedEvent(keyEvent));
+        taskPool.execute(() -> modelEvents.ifPresent(model -> model.sendKeyPressedEvent(keyEvent)));
+    }
+
+    @Override
+    public void keyReleased(KeyEvent keyEvent) {
+        taskPool.execute(() -> modelEvents.ifPresent(model -> model.sendKeyReleasedEvent(keyEvent)));
     }
 }

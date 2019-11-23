@@ -84,6 +84,7 @@ public class InstructionFactory<Instr extends Instruction> implements Instructio
         ArrayList<InstructionFactoryInterface> factoriesList = new ArrayList<InstructionFactoryInterface>() {
             {
                 add(new InstructionFactory<>(InstructionSet.Call.class));
+                add(new InstructionFactory<>(InstructionSet.DisplayClear.class));
                 add(new InstructionFactory<>(InstructionSet.Return.class));
                 add(new InstructionFactory<>(InstructionSet.Jump.class));
                 add(new InstructionFactory<>(InstructionSet.CallWordPtr.class));
@@ -105,15 +106,18 @@ public class InstructionFactory<Instr extends Instruction> implements Instructio
                 add(new InstructionFactory<>(InstructionSet.LoadRegI.class));
                 add(new InstructionFactory<>(InstructionSet.BranchRelv0.class));
                 add(new InstructionFactory<>(InstructionSet.Rand.class));
-                add(new InstructionFactory<>(InstructionSet.DisplayClear.class));
+                add(new InstructionFactory<>(InstructionSet.DrawSprite.class));
+                add(new InstructionFactory<>(InstructionSet.SkipEqualKey.class));
+                add(new InstructionFactory<>(InstructionSet.SkipNotEqualKey.class));
                 add(new InstructionFactory<>(InstructionSet.GetDelayTimerCounter.class));
+                add(new InstructionFactory<>(InstructionSet.GetKey.class));
                 add(new InstructionFactory<>(InstructionSet.SetDelayTimerCounter.class));
                 add(new InstructionFactory<>(InstructionSet.SetSoundTimerCounter.class));
                 add(new InstructionFactory<>(InstructionSet.AddRegI.class));
+                add(new InstructionFactory<>(InstructionSet.GetSpriteAddress.class));
                 add(new InstructionFactory<>(InstructionSet.StoreBCD.class));
                 add(new InstructionFactory<>(InstructionSet.RegDump.class));
                 add(new InstructionFactory<>(InstructionSet.RegLoad.class));
-                add(new InstructionFactory<>(InstructionSet.DrawSprite.class));
             }
         };
         HashMap<String, InstructionFactoryInterface> factoriesHashMap = new HashMap<>();

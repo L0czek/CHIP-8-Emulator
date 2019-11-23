@@ -15,6 +15,7 @@ public interface ModelInterface {
     void setRegisterValue(Registers r, int value);
     int getRegisterValue(Registers r);
     void keyPressed(KeyEvent keyEvent);
+    void keyReleased(KeyEvent keyEvent);
     int getCurrentExecutingLineNumber();
     int[][] getScreen();
     int getPixel(int x, int y);

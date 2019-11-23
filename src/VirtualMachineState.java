@@ -1,8 +1,6 @@
+import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
-import java.util.Optional;
-import java.util.Stack;
-import java.util.Timer;
-import java.util.Vector;
+import java.util.*;
 
 public class VirtualMachineState {
     public static class VMException extends Exception {
@@ -31,6 +29,9 @@ public class VirtualMachineState {
     private Disassembler disassembler;
     private Optional<Events.ViewForModel> view;
 
+    private Keyboard keyboard;
+    private Timer timer;
+
     public VirtualMachineState(Assembler.Assembled code, Disassembler disassembler, Optional<Events.ViewForModel> view) {
         regs = new int[16];
         memory = new byte[0x1000];
@@ -40,8 +41,18 @@ public class VirtualMachineState {
         ip = 0x200;
         linens = code.getLineNumbers();
         System.arraycopy(code.getByteCode(), 0, memory, 0x200, code.getByteCode().length);
+        System.arraycopy(BuiltinSprites, 0, memory, 0, BuiltinSprites.length);
         this.disassembler = disassembler;
         this.view = view;
+        keyboard = new Keyboard();
+        timer = new Timer();
+        final int timer_freq = 1000 / 60;
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                timerInterrupt();
+            }
+        }, timer_freq, timer_freq);
     }
 
     public int getReg(int n) {
@@ -77,7 +88,7 @@ public class VirtualMachineState {
         regI = value;
     }
     public void callSubroutine(int address) {
-        callStack.push(ip);
+        callStack.push(ip + 2);
         ip = address;
     }
     public void returnFromSubroutine() {
@@ -147,11 +158,54 @@ public class VirtualMachineState {
     }
     public void executeInstruction() throws VMException {
         short opcode = memoryGetShort(ip);
-        System.out.println(String.format("executing %04X\n", opcode));
+        //System.out.println(String.format("executing %04X\n", opcode));
         Optional<Instruction> decoded = disassembler.decodeInstruction(opcode);
         if(!decoded.isPresent()) {
             throw new VMException("Cannot decode instruction", this);
         }
         decoded.get().execute(this);
     }
+
+    public void keyPressed(KeyEvent keyEvent) {
+        keyboard.keyPressed(keyEvent);
+    }
+
+    public void keyReleased(KeyEvent keyEvent) {
+        keyboard.keyReleased(keyEvent);
+    }
+
+    public Optional<Integer> getKey() {
+        return keyboard.getKeyPressed();
+    }
+
+    public boolean isKeyPressed(int key) {
+        return keyboard.isKeyPressed(key);
+    }
+
+    public int getSpriteAddress(int n) {
+        if(n < 16) {
+            return n * 5;
+        } else {
+            return 0;
+        }
+    }
+
+    public static byte[] BuiltinSprites = {
+            (byte)0xF0, (byte)0x90, (byte)0x90, (byte)0x90, (byte)0xF0, // 0
+            (byte)0x20, (byte)0x60, (byte)0x20, (byte)0x20, (byte)0x70, // 1
+            (byte)0xF0, (byte)0x10, (byte)0xF0, (byte)0x80, (byte)0xF0, // 2
+            (byte)0xF0, (byte)0x10, (byte)0xF0, (byte)0x10, (byte)0xF0, // 3
+            (byte)0x90, (byte)0x90, (byte)0xF0, (byte)0x10, (byte)0x10, // 4
+            (byte)0xF0, (byte)0x80, (byte)0xF0, (byte)0x10, (byte)0xF0, // 5
+            (byte)0xF0, (byte)0x80, (byte)0xF0, (byte)0x90, (byte)0xF0, // 6
+            (byte)0xF0, (byte)0x10, (byte)0x20, (byte)0x40, (byte)0x40, // 7
+            (byte)0xF0, (byte)0x90, (byte)0xF0, (byte)0x90, (byte)0xF0, // 8
+            (byte)0xF0, (byte)0x90, (byte)0xF0, (byte)0x10, (byte)0xF0, // 9
+            (byte)0xF0, (byte)0x90, (byte)0xF0, (byte)0x90, (byte)0x90, // 10
+            (byte)0xE0, (byte)0x90, (byte)0xE0, (byte)0x90, (byte)0xE0, // 11
+            (byte)0xF0, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0xF0, // 12
+            (byte)0xE0, (byte)0x90, (byte)0x90, (byte)0x90, (byte)0xE0, // 13
+            (byte)0xF0, (byte)0x80, (byte)0xF0, (byte)0x80, (byte)0xF0, // 14
+            (byte)0xF0, (byte)0x80, (byte)0xF0, (byte)0x80, (byte)0x80, // 15
+    };
 }

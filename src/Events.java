@@ -3,6 +3,7 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.security.Key;
 import java.util.Optional;
 
 public class Events {
@@ -50,6 +51,9 @@ public class Events {
         }
         public void sendKeyPressedEvent(KeyEvent keyEvent) {
             SwingUtilities.invokeLater(() -> controller.keyPressed(keyEvent));
+        }
+        public void sendKeyReleasedEvent(KeyEvent keyEvent) {
+            SwingUtilities.invokeLater(() -> controller.keyReleased(keyEvent));
         }
     }
 
@@ -151,6 +155,9 @@ public class Events {
         }
         public void sendKeyPressedEvent(KeyEvent keyEvent) {
             model.keyPressed(keyEvent);
+        }
+        public void sendKeyReleasedEvent(KeyEvent keyEvent) {
+            model.keyReleased(keyEvent);
         }
         public int[][] sendGetScreenEvent() {
             return model.getScreen();

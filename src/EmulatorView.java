@@ -49,13 +49,12 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
 
             @Override
             public void keyPressed(KeyEvent keyEvent) {
-                System.out.println(keyEvent);
                 onKeyPress(keyEvent);
             }
 
             @Override
             public void keyReleased(KeyEvent keyEvent) {
-
+                onKeyRelease(keyEvent);
             }
         });
 
@@ -72,7 +71,6 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
 
     private void onKeyPress(KeyEvent keyEvent) {
         int key = keyEvent.getKeyCode();
-        System.out.println(key);
         switch (key) {
             case KeyEvent.VK_F2:
                 events.ifPresent(events -> events.sendMarkAsDataEvent(assemblyView.getSelectedLine()));
@@ -89,7 +87,13 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
             case KeyEvent.VK_F8:
                 events.ifPresent(events -> events.sendStepOverEvent());
                 break;
+            default:
+                events.ifPresent(events -> events.sendKeyPressedEvent(keyEvent));
         }
+    }
+
+    private void onKeyRelease(KeyEvent keyEvent) {
+        events.ifPresent(events -> events.sendKeyReleasedEvent(keyEvent));
     }
 
     @Override
@@ -208,6 +212,7 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
 
                 @Override
                 public void keyReleased(KeyEvent keyEvent) {
+                    EmulatorView.this.onKeyRelease(keyEvent);
                     if(inputDisabled) {
                         keyEvent.consume();
                     }

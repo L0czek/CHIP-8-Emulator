@@ -33,6 +33,10 @@ public class InstructionVisitor {
         void visit(InstructionSet.RegDump instr);
         void visit(InstructionSet.RegLoad instr);
         void visit(InstructionSet.DrawSprite instr);
+        void visit(InstructionSet.SkipEqualKey skipEqualKey);
+        void visit(InstructionSet.SkipNotEqualKey skipNotEqualKey);
+        void visit(InstructionSet.GetKey getKey);
+        void visit(InstructionSet.GetSpriteAddress getSpriteAddress);
     }
 
     public static class NextIpVisitor implements Visitor {
@@ -206,6 +210,28 @@ public class InstructionVisitor {
 
         @Override
         public void visit(InstructionSet.DrawSprite instr) {
+            ips.add(currentIp + 2);
+        }
+
+        @Override
+        public void visit(InstructionSet.SkipEqualKey skipEqualKey) {
+            ips.add(currentIp + 2);
+            ips.add(currentIp + 4);
+        }
+
+        @Override
+        public void visit(InstructionSet.SkipNotEqualKey skipNotEqualKey) {
+            ips.add(currentIp + 2);
+            ips.add(currentIp + 4);
+        }
+
+        @Override
+        public void visit(InstructionSet.GetKey getKey) {
+            ips.add(currentIp + 2);
+        }
+
+        @Override
+        public void visit(InstructionSet.GetSpriteAddress getSpriteAddress) {
             ips.add(currentIp + 2);
         }
     }

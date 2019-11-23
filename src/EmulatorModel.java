@@ -27,11 +27,21 @@ public class EmulatorModel implements ModelInterface {
 
         disassembler = new Disassembler(InstructionFactory.factoriesByIndex());
         assembler = new Assembler(InstructionFactory.factoriesByMnemonic());
+
     }
 
     @Override
     public void keyPressed(KeyEvent keyEvent) {
+        if(vmState != null) {
+            vmState.keyPressed(keyEvent);
+        }
+    }
 
+    @Override
+    public void keyReleased(KeyEvent keyEvent) {
+        if(vmState != null) {
+            vmState.keyReleased(keyEvent);
+        }
     }
 
     @Override
@@ -57,7 +67,8 @@ public class EmulatorModel implements ModelInterface {
 
     @Override
     public void setRegisterValue(Registers r, int value) {
-
+        if(r != Registers.Invalid && vmState != null)
+            vmState.setReg(Registers.toInt(r), value);
     }
 
     @Override
