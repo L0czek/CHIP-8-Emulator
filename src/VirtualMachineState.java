@@ -57,10 +57,28 @@ public class VirtualMachineState {
     }
 
     public int getReg(int n) {
-        return regs[n];
+        switch(n) {
+            case 16: return getRegI();
+            case 17: return getIp();
+            default:
+                return regs[n];
+        }
     }
     public void setReg(int n, int value) {
-        regs[n] = value;
+        switch(n) {
+            case 16:
+                setRegI(value);
+                break;
+            case 17:
+                setIp(value);
+                break;
+            default:
+                regs[n] = value;
+        }
+    }
+
+    public void setIp(int value) {
+        ip = value;
     }
 
     public byte memoryGetByte(int address) {

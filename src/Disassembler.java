@@ -70,7 +70,7 @@ public class Disassembler {
     public String disassemble(byte[] data, int offset) {
         StringBuilder result = new StringBuilder();
         ArrayList<Integer> codeCoverage = getCodeCoverage(data);
-        for(int i=0; i < data.length; i += 2) {
+        for(int i=0; i < data.length; ++i) {
             if(i + 1 == data.length) {
                 result.append(disassemble(data[i], i));
                 break;
@@ -78,9 +78,9 @@ public class Disassembler {
             if(codeCoverage.indexOf(i) != -1) {
                 short opcode = (short)(((((int)data[i]) << 8) & 0xff00) | (((int)data[i+1])& 0xff));
                 result.append(disassemble(opcode, i));
+                i += 1;
             } else {
                 result.append(disassemble(data[i], i));
-                result.append(disassemble(data[i+1], i+1));
             }
         }
         return result.toString();

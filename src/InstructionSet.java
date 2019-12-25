@@ -951,8 +951,8 @@ public class InstructionSet {
 
         @Override
         public void execute(VirtualMachineState state) {
-            int x = state.getReg(getValueX()) % 64;
-            int y = state.getReg(getValueY()) % 32;
+            int x = state.getReg(getValueX());
+            int y = state.getReg(getValueY());
             int n = getValueN();
             int address = state.getRegI();
             boolean flipped = false;
