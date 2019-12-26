@@ -6,6 +6,9 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Optional;
 
+/**
+ * View part of MVC
+ */
 public final class EmulatorView extends JFrame implements ViewInterface  {
     private Menu menu = null;
     private JLabel status = null;
@@ -30,6 +33,9 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
         return gc;
     }
 
+    /**
+     * generates GUI
+     */
     public EmulatorView() {
         super("Chip-8 Emulator");
         setSize(800, 600);
@@ -92,6 +98,10 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
         events.ifPresent(events -> events.sendKeyReleasedEvent(keyEvent));
     }
 
+    /**
+     * sets up controller event handlers
+     * @param controller
+     */
     @Override
     public void setupEventHandlers(ControllerInterface controller) {
         events = Optional.of(new Events.ForView(controller));
@@ -113,65 +123,123 @@ public final class EmulatorView extends JFrame implements ViewInterface  {
     }
 
     // =========================== EVENTS =================================
+
+    /**
+     * get assembly from editor
+     * @return assembly code
+     */
     @Override
     public String getAssembly() {
         return assemblyView.getText();
     }
+
+    /**
+     * set assembly in editor
+     * @param assembly assembly to be set
+     */
     @Override
     public void setAssembly(String assembly) {
         assemblyView.setText(assembly);
     }
+
+    /**
+     * set pixel value on screen
+     * @param x x coordinate
+     * @param y y coordinate
+     * @param value RGB value
+     */
     @Override
     public void setPixelRGB(int x, int y, int value) {
         debugView.setPixel(x, y, value);
         repaint();
     }
+
+    /**
+     * clear screen
+     */
     @Override
     public void clearScreen() {
         debugView.clearScreen();
         repaint();
     }
 
+    /**
+     * set screen image
+     * @param screen image to be set on screen
+     */
     @Override
     public void setScreen(BufferedImage screen) {
         debugView.setScreen(screen);
     }
 
+    /**
+     * get pixel value
+     * @param x x coordinate
+     * @param y y coordinate
+     * @return RGB value
+     */
     @Override
     public int getPixelRGB(int x, int y) {
         return debugView.getPixel(x, y);
     }
 
+    /**
+     * show message box with error
+     * @param msg msg to show
+     */
     @Override
     public void reportError(String msg) {
         JOptionPane.showMessageDialog(null, msg);
     }
 
+    /**
+     * set line color in editor
+     * @param linen line number to change color
+     * @param color color to be set
+     */
     @Override
     public void setLineColor(int linen, Color color) {
         assemblyView.setLineColor(linen, color);
     }
 
+    /**
+     * clear all line colors
+     */
     @Override
     public void clearLineColors() {
         assemblyView.clearLinesColor();
     }
 
+    /**
+     * set text of status bar
+     * @param text text to be set
+     */
     @Override
     public void setStatusText(String text) {
         status.setText(text);
     }
 
+    /**
+     * set register value on debugger window
+     * @param r register to be set
+     * @param value new value
+     */
     @Override
     public void setRegisterValue(Registers r, int value) {
         debugView.updateRegisterValue(r, value);
     }
 
+    /**
+     * enable editor input
+     */
     @Override
     public void enableAssemblerEditing() {
         assemblyView.enableInput();
     }
 
+    /**
+     * disable editor input
+     */
     @Override
     public void disableAssemblerEditing() {
         assemblyView.disableInput();

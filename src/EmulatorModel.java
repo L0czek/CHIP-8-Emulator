@@ -10,6 +10,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Optional;
 
+/**
+ * class representing model in MVC
+ */
 public class EmulatorModel implements ModelInterface {
     private byte[] byteCode;
     private String[] assemblyLines;
@@ -21,6 +24,10 @@ public class EmulatorModel implements ModelInterface {
 
     Optional<Events.ViewForModel> events = Optional.empty();
 
+    /**
+     * creates model
+     * @throws Exception throws when provided invalid instruction factory list
+     */
     public EmulatorModel() throws Exception {
         byteCode = new byte[]{};
         assemblyLines = new String[]{};
@@ -30,6 +37,10 @@ public class EmulatorModel implements ModelInterface {
 
     }
 
+    /**
+     * handles key press event
+     * @param keyEvent event send
+     */
     @Override
     public void keyPressed(KeyEvent keyEvent) {
         if(vmState != null) {
@@ -37,6 +48,10 @@ public class EmulatorModel implements ModelInterface {
         }
     }
 
+    /**
+     * handles key released event
+     * @param keyEvent event send
+     */
     @Override
     public void keyReleased(KeyEvent keyEvent) {
         if(vmState != null) {
@@ -44,16 +59,31 @@ public class EmulatorModel implements ModelInterface {
         }
     }
 
+    /**
+     * get the screen as 2 dimensional array
+     * @return screen buffer as int array
+     */
     @Override
     public int[][] getScreen() {
         return vmState.getScreen();
     }
 
+    /**
+     * get pixel value
+     * @param x x coordinate
+     * @param y y coordinate
+     * @return RGB value
+     */
     @Override
     public int getPixel(int x, int y) {
         return vmState.getPixel(x,y);
     }
 
+    /**
+     * get selected register value
+     * @param r selected register
+     * @return register value
+     */
     @Override
     public int getRegisterValue(Registers r) {
         if(r == Registers.I) {
@@ -65,19 +95,35 @@ public class EmulatorModel implements ModelInterface {
         }
     }
 
+    /**
+     * set selected register value
+     * @param r selected register
+     * @param value new value
+     */
     @Override
     public void setRegisterValue(Registers r, int value) {
         if(r != Registers.Invalid && vmState != null)
             vmState.setReg(Registers.toInt(r), value);
     }
 
+    /**
+     * load assembly from file
+     * @param path path to assembly file
+     * @return loaded assembler to display
+     * @throws IOException throws on filesystem error
+     */
     @Override
     public String loadAssemblyFromFile(String path) throws IOException {
         String content = new String(Files.readAllBytes(Paths.get(path)));
         assemblyLines = content.split("\n");
         return content;
     }
-
+    /**
+     * load bytecode from file
+     * @param path path to bytecode file
+     * @return disassembled bytecode to display
+     * @throws IOException throws on filesystem error
+     */
     @Override
     public String loadByteCodeFromFile(String path) throws IOException {
         byte[] content = Files.readAllBytes(Paths.get(path));
@@ -86,23 +132,46 @@ public class EmulatorModel implements ModelInterface {
         return disassembly;
     }
 
+    /**
+     * save assembly to file
+     * @param path path to file selected by user
+     * @param assembly assembly from view
+     * @throws IOException throws on filesystem error
+     */
     @Override
     public void saveAssemblyToFile(String path, String assembly) throws IOException {
         Files.write(Paths.get(path), Collections.singleton(assembly));
     }
-
+    /**
+     * save assembled code to file
+     * @param path path to file selected by user
+     * @param assembly assembly from view
+     * @throws IOException throws on filesystem error
+     */
     @Override
     public void saveByteCodeToFile(String path, String assembly) throws Assembler.AssemblerException, IOException {
         byteCode = assembler.generateByteCode(assembly, 0);
         Files.write(Paths.get(path), byteCode);
     }
 
+    /**
+     * handler user pressing run button
+     * @param assembly
+     * @throws Assembler.AssemblerException
+     */
     @Override
     public void startEmulation(String assembly) throws Assembler.AssemblerException {
         vmCode = assembler.generateOutput(assembly, 0);
         vmState = new VirtualMachineState(vmCode, disassembler, events);
     }
 
+    /**
+     * function tries to disassemble selected assembly line as valid instruction
+     * @param linen line number to change
+     * @param assembly assembly to recompile
+     * @return recompiled assembly
+     * @throws Assembler.AssemblerException thrown on assembly error
+     */
     @Override
     public String recompileAsCode(int linen, String assembly) throws Assembler.AssemblerException {
         assemblyLines = assembly.split("\n");
@@ -135,7 +204,13 @@ public class EmulatorModel implements ModelInterface {
         }
         return assembler.fixOffsets(builder.toString());
     }
-
+    /**
+     * function tries to disassemble selected assembly line as emit byte meta instruction
+     * @param linen line number to change
+     * @param assembly assembly to recompile
+     * @return recompiled assembly
+     * @throws Assembler.AssemblerException thrown on assembly error
+     */
     @Override
     public String recompileAsData(int linen, String assembly) throws Assembler.AssemblerException {
         assemblyLines = assembly.split("\n");
@@ -151,11 +226,19 @@ public class EmulatorModel implements ModelInterface {
         return assembler.fixOffsets(builder.toString());
     }
 
+    /**
+     * execute one instruction at current ip
+     * @throws VirtualMachineState.VMException thrown by instruction
+     */
     @Override
     public void executeOpcode() throws VirtualMachineState.VMException {
         vmState.executeInstruction();
     }
 
+    /**
+     * get assembly line of currently executing instruction
+     * @return line number
+     */
     @Override
     public int getCurrentExecutingLineNumber() {
         try {
@@ -165,6 +248,10 @@ public class EmulatorModel implements ModelInterface {
         }
     }
 
+    /**
+     * setup event handlers for view
+     * @param view view part of MVC
+     */
     @Override
     public void setupEventHandlers(ViewInterface view) {
         events = Optional.of(new Events.ViewForModel(view));

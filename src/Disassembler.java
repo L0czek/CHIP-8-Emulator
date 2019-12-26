@@ -2,14 +2,26 @@
 import java.util.ArrayList;
 import java.util.Optional;
 
+/**
+ * class implementing CHIP-8 disassembler
+ */
 public class Disassembler {
 
     private ArrayList<InstructionFactoryInterface> factories;
 
+    /**
+     * create disassembler from instruction factories which take opcode
+     * @param factories_ list of instruction
+     */
     public Disassembler(ArrayList<InstructionFactoryInterface> factories_) {
         this.factories = factories_;
     }
 
+    /**
+     * takes 2 bytes and returns either and decoded instruction or empty object on error
+     * @param opcode opcode to be decoded
+     * @return decoded instruction or empty
+     */
     public Optional<Instruction> decodeInstruction(short opcode) {
         for (InstructionFactoryInterface factory : factories) {
             Optional<Instruction> decoded = factory.fromOpcode(opcode);
@@ -20,10 +32,22 @@ public class Disassembler {
         return Optional.empty();
     }
 
+    /**
+     * disassembles one byte to emit byte assembly meta instruction
+     * @param data one byte from bytecode
+     * @param offset corresponding offset in bytecode
+     * @return disassembled string
+     */
     public String disassemble(byte data, int offset) {
         return String.format("#@ %04X %04X : %02X    # db 0x%X\n", offset, offset +0x200, data, data);
     }
 
+    /**
+     * disassemble 2 bytes (short) to either valid instruction or 2 emit bytes meta instructions
+     * @param data short to be disassembled
+     * @param offset corresponding offset in bytecode
+     * @return disassembled string
+     */
     public String disassemble(short data, int offset) {
         Optional<Instruction> instr = decodeInstruction(data);
         if(instr.isPresent()) {
@@ -33,6 +57,12 @@ public class Disassembler {
         }
     }
 
+    /**
+     * predicts the next ip address from current instruction
+     * @param value current opcode
+     * @param ip current ip
+     * @return array of possible next ip values
+     */
     private ArrayList<Integer> nextBranches(short value, int ip) {
         for(InstructionFactoryInterface factory : factories) {
             Optional<Instruction> decoded = factory.fromOpcode(value);
@@ -46,6 +76,11 @@ public class Disassembler {
         return new ArrayList<>();
     }
 
+    /**
+     * generates array of addresses which can be accessed by cpu to be executed as instruction
+     * @param data bytecode
+     * @return array of addresses
+     */
     public ArrayList<Integer> getCodeCoverage(byte[] data) {
         ArrayList<Integer> codeIndexes = new ArrayList<>();
         ArrayList<Integer> toCheck = new ArrayList<>();
@@ -67,6 +102,12 @@ public class Disassembler {
         return codeIndexes;
     }
 
+    /**
+     * disassembles bytes at offset
+     * @param data bytecode to be disassembled
+     * @param offset offset of this bytes in bytecode
+     * @return disassembly string
+     */
     public String disassemble(byte[] data, int offset) {
         StringBuilder result = new StringBuilder();
         ArrayList<Integer> codeCoverage = getCodeCoverage(data);
@@ -86,6 +127,11 @@ public class Disassembler {
         return result.toString();
     }
 
+    /**
+     * disassemble whole bytecode
+     * @param data bytecode to be disassembled
+     * @return disassembly string
+     */
     public String disassemble(byte[] data) {
         return disassemble(data, 0);
     }

@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Optional;
 
+/**
+ * generic class defining factory of instruction
+ * @param <Instr> concrete class defining instruction
+ */
 public class InstructionFactory<Instr extends Instruction> implements InstructionFactoryInterface{
     private final Constructor<? extends Instr> assemblyCtor;
     private final Constructor<? extends Instr> opcodeCtor;
@@ -12,6 +16,13 @@ public class InstructionFactory<Instr extends Instruction> implements Instructio
     private int opcodeValue;
     private String mnemonic;
 
+    /**
+     * create factory from class object of instruction class
+     * @param impl class object of instruction class
+     * @throws NoSuchMethodException thrown when instruction class does not implement getOpcodeMask, getMask, getMnemonic static functions
+     * @throws IllegalAccessException thrown when instruction class does not implement getOpcodeMask, getMask, getMnemonic static functions
+     * @throws InvocationTargetException thrown when instruction class does not implement getOpcodeMask, getMask, getMnemonic static functions
+     */
     public InstructionFactory(Class<? extends Instr> impl) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         assemblyCtor = impl.getConstructor(String[].class);
         opcodeCtor = impl.getConstructor(short.class);
@@ -20,6 +31,11 @@ public class InstructionFactory<Instr extends Instruction> implements Instructio
         mnemonic = (String)impl.getMethod("getMnemonic").invoke(null, new Object[0]);
     }
 
+    /**
+     * create instruction given parsed assembly
+     * @param assembly tokenized assembly
+     * @return instruction object or empty on error
+     */
     @Override
     public Optional<Instruction> fromAssembly(String[] assembly) {
         try {
@@ -33,6 +49,11 @@ public class InstructionFactory<Instr extends Instruction> implements Instructio
         }
     }
 
+    /**
+     * create instruction given opcode from bytecode
+     * @param opcode opcode from bytecode
+     * @return instruction object or empty on error
+     */
     @Override
     public Optional<Instruction> fromOpcode(short opcode) {
         try {
@@ -46,6 +67,12 @@ public class InstructionFactory<Instr extends Instruction> implements Instructio
         }
     }
 
+    /**
+     * used to get number of bits in opcode mask which are set to determine the correct order in which opcode is checked against instructions
+     * (before you try with mask 0xf000 you should try with 0xff00 because 0xf000 will match when 0xf000 matches
+     * so 0xff00 should be checked first
+     * @return number of bits set
+     */
     @Override
     public int getOpcodeMaskAccuracy() {
         return Integer.bitCount(opcodeMask);
@@ -54,6 +81,11 @@ public class InstructionFactory<Instr extends Instruction> implements Instructio
     private static Optional<ArrayList<InstructionFactoryInterface>> factoriesByIndex = Optional.empty();
     private static Optional<HashMap<String, InstructionFactoryInterface>> factoriesByMnemonic = Optional.empty();
 
+    /**
+     * get factories by index (useful when disassembling)
+     * @return factories as array
+     * @throws Exception may be thrown when setting up factories
+     */
     public static ArrayList<InstructionFactoryInterface> factoriesByIndex() throws Exception {
         if(factoriesByIndex.isPresent()) {
             return factoriesByIndex.get();
@@ -62,6 +94,11 @@ public class InstructionFactory<Instr extends Instruction> implements Instructio
         return factoriesByIndex.get();
     }
 
+    /**
+     * get factories by mnemonic (useful when assembling)
+     * @return hashmap of factories (mnemonic -> factory)
+     * @throws Exception may be thrown when setting up factories
+     */
     public static HashMap<String, InstructionFactoryInterface> factoriesByMnemonic() throws Exception {
         if(factoriesByMnemonic.isPresent()) {
             return factoriesByMnemonic.get();
@@ -70,16 +107,28 @@ public class InstructionFactory<Instr extends Instruction> implements Instructio
         return factoriesByMnemonic.get();
     }
 
+    /**
+     * used to get mnemonic of this factory
+     * @return mnemonic as string
+     */
     @Override
     public String getMnemonic() {
         return mnemonic;
     }
 
+    /**
+     * get opcode of current factory
+     * @return opcode as short
+     */
     @Override
     public short getOpcode() {
         return (short)opcodeValue;
     }
 
+    /**
+     * sets up factories for all instructions
+     * @throws Exception
+     */
     private static void setupFactories() throws Exception {
         ArrayList<InstructionFactoryInterface> factoriesList = new ArrayList<InstructionFactoryInterface>() {
             {

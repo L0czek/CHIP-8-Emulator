@@ -1,6 +1,9 @@
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * CHIP-8 register enumeration
+ */
 public enum Registers {
     v0,
     v1,
@@ -22,6 +25,11 @@ public enum Registers {
     ip,
     Invalid;
 
+    /**
+     * create register form register number
+     * @param value register number
+     * @return selected register
+     */
     public static Registers fromInt(int value) {
         switch (value) {
             case 0: return Registers.v0;
@@ -47,10 +55,19 @@ public enum Registers {
         }
     }
 
+    /**
+     * convert register to integer number
+     * @param r selected register
+     * @return register number
+     */
     public static int toInt(Registers r) {
         return r.ordinal();
     }
 
+    /**
+     * iterate over all register numbers
+     * @return array of all numbers
+     */
     public static List<Registers> iterate() {
         return Arrays.asList(Registers.values()).subList(0, 18);
     }

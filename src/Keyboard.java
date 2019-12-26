@@ -5,24 +5,43 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Optional;
 
+/**
+ * class handling keyboard events
+ */
 public class Keyboard {
     private ArrayList<KeyEvent> keyEvents;
     private HashMap<Integer, Integer> keyMapping;
     private Object mutex = new Object();
     private boolean[] keys = new boolean[16];
 
+    /**
+     * default constructor
+     */
     public Keyboard() {
         keyMapping = getDefaultMapping();
     }
 
+    /**
+     * constructor with custom key mappings
+     * @param keyMapping new key mappings
+     */
     public Keyboard(HashMap<Integer, Integer> keyMapping) {
         this.keyMapping = keyMapping;;
     }
 
+    /**
+     * set key mappings
+     * @param mapping new key mappings
+     */
     public void setKeyMapping(HashMap<Integer, Integer> mapping) {
         keyMapping = mapping;
     }
 
+    /**
+     * check whether specified key is pressed
+     * @param key key code to check against
+     * @return true if key is pressed, false otherwise
+     */
     boolean isKeyPressed(int key) {
         if(key < 16) {
             return keys[key];
@@ -31,6 +50,10 @@ public class Keyboard {
         }
     }
 
+    /**
+     * get key code being pressed or empty when none is pressed
+     * @return pressed key code or empty
+     */
     Optional<Integer> getKeyPressed() {
         for(int i=0; i < 16; ++i) {
             if(keys[i]) {
@@ -40,6 +63,10 @@ public class Keyboard {
         return Optional.empty();
     }
 
+    /**
+     * called by key event dispatcher sets key
+     * @param keyEvent key pressed event from keyboard
+     */
     public void keyPressed(KeyEvent keyEvent) {
         int key = keyEvent.getKeyCode();
         if(keyMapping.containsKey(key))
@@ -47,6 +74,10 @@ public class Keyboard {
 
     }
 
+    /**
+     * called by key dispatcher resets key
+     * @param keyEvent key event from keyboard
+     */
     public void keyReleased(KeyEvent keyEvent) {
         int key = keyEvent.getKeyCode();
         if(keyMapping.containsKey(key))
@@ -54,6 +85,10 @@ public class Keyboard {
 
     }
 
+    /**
+     * return the default mapping
+     * @return hashmap mapping keys on real keyboard to CHIP-8's hex keyboard
+     */
     public static HashMap<Integer, Integer> getDefaultMapping() {
         return new HashMap<Integer, Integer>() {
             {

@@ -6,6 +6,9 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * controller in MVC
+ */
 public class EmulatorController implements ControllerInterface {
 
     private Optional<Events.ViewForController> viewEvents = Optional.empty();
@@ -20,10 +23,17 @@ public class EmulatorController implements ControllerInterface {
 
     private State state = State.Ready;
 
+    /**
+     * creates controller
+     */
     public EmulatorController() {
         taskPool = Executors.newFixedThreadPool(4);
     }
 
+    /**
+     * sets current emulation state
+     * @param s state to be set
+     */
     private synchronized void setState(State s) {
         if(viewEvents.isPresent()) {
             Events.ViewForController view = viewEvents.get();
@@ -36,6 +46,10 @@ public class EmulatorController implements ControllerInterface {
         state = s;
     }
 
+    /**
+     * get current emulation state
+     * @return current state
+     */
     private synchronized State getState() { return state; }
 
     private void markAsCodeImpl(int linen) {
@@ -53,6 +67,10 @@ public class EmulatorController implements ControllerInterface {
         }
     }
 
+    /**
+     * converts assembly line of passed number to code (from emit byte instruction to valid instruction or the same emit byte on disassembly error)
+     * @param linen
+     */
     @Override
     public void markAsCode(int linen) {
         taskPool.execute(() -> markAsCodeImpl(linen));
@@ -73,6 +91,10 @@ public class EmulatorController implements ControllerInterface {
         }
     }
 
+    /**
+     * change assembly line of passed number to emit byte meta instruction
+     * @param linen
+     */
     @Override
     public void markAsData(int linen) {
         taskPool.execute(() -> markAsDataImpl(linen));
@@ -92,6 +114,10 @@ public class EmulatorController implements ControllerInterface {
         }
     }
 
+    /**
+     * handles load assembly from file button on view
+     * @param path specified path by user
+     */
     @Override
     public void loadAssemblyFromFile(String path) {
         taskPool.execute(() -> loadAssemblyFromFileImpl(path));
@@ -110,7 +136,10 @@ public class EmulatorController implements ControllerInterface {
             }
         }
     }
-
+    /**
+     * handles load bytecode from file button on view
+     * @param path specified path by user
+     */
     @Override
     public void loadByteCodeFromFile(String path) {
         taskPool.execute(() -> loadBytecodeFromFileImpl(path));
@@ -129,7 +158,10 @@ public class EmulatorController implements ControllerInterface {
             }
         }
     }
-
+    /**
+     * handles save assembly from file button on view
+     * @param path specified path by user
+     */
     @Override
     public void saveAssemblyToFile(String path) {
         taskPool.execute(() -> saveAssemblyToFileImpl(path));
@@ -152,7 +184,10 @@ public class EmulatorController implements ControllerInterface {
             }
         }
     }
-
+    /**
+     * handles save bytecode from file button on view
+     * @param path specified path by user
+     */
     @Override
     public void saveByteCodeToFile(String path) {
         taskPool.execute(() -> saveByteCodeToFileImpl(path));
@@ -175,6 +210,9 @@ public class EmulatorController implements ControllerInterface {
         }
     }
 
+    /**
+     * handles user pressing continue button
+     */
     @Override
     public void cont() {
         taskPool.execute(() -> contImpl());
@@ -206,6 +244,9 @@ public class EmulatorController implements ControllerInterface {
         }
     }
 
+    /**
+     * handles uer pressing step in button
+     */
     @Override
     public void stepIn() {
         taskPool.execute(() -> stepInImpl());
@@ -230,15 +271,21 @@ public class EmulatorController implements ControllerInterface {
         }
     }
 
+    /**
+     * handles user pressing step over
+     */
     @Override
     public void stepOver() {
         taskPool.execute(this::stepOverImpl);
     }
 
-    public void stopImpl() {
+
+    private void stopImpl() {
         setState(State.Stop);
     }
-
+    /**
+     * handles user pressing stop button
+     */
     @Override
     public void stop() {
         taskPool.execute(this::stopImpl);
@@ -250,6 +297,11 @@ public class EmulatorController implements ControllerInterface {
         }
     }
 
+    /**
+     * handles user setting new register values in view
+     * @param r register to be changed
+     * @param value new value
+     */
     @Override
     public void setRegisterValue(Registers r, int value) {
         taskPool.execute(() -> setRegisterValueImpl(r, value));
@@ -274,12 +326,15 @@ public class EmulatorController implements ControllerInterface {
         }
     }
 
+    /**
+     * handles user pressing run button
+     */
     @Override
     public void runEmulation() {
         taskPool.execute(this::runEmulationImpl);
     }
 
-    public void exitEmulationImpl() {
+    private void exitEmulationImpl() {
         if(getState() == State.Stop || getState() == State.Running) {
             setState(State.Ready);
             if(viewEvents.isPresent()) {
@@ -292,26 +347,42 @@ public class EmulatorController implements ControllerInterface {
         }
     }
 
+    /**
+     * handles user pressing exit button
+     */
     @Override
     public void exitEmulation() {
         taskPool.execute(this::exitEmulationImpl);
     }
 
+    /**
+     * setting up event handlers for view
+     * @param view view event handlers
+     */
     @Override
     public void setupEventHandlers(ViewInterface view) {
         viewEvents = Optional.of(new Events.ViewForController(view));
     }
-
+    /**
+     * setting up event handlers for model
+     * @param model model event handlers
+     */
     @Override
     public void setupEventHandlers(ModelInterface model) {
         modelEvents = Optional.of(new Events.ModelForController(model));
     }
-
+    /**
+     * handling keyboard key press event
+     * @param keyEvent key press event
+     */
     @Override
     public void keyPressed(KeyEvent keyEvent) {
         taskPool.execute(() -> modelEvents.ifPresent(model -> model.sendKeyPressedEvent(keyEvent)));
     }
-
+    /**
+     * handling keyboard key released event
+     * @param keyEvent key released event send
+     */
     @Override
     public void keyReleased(KeyEvent keyEvent) {
         taskPool.execute(() -> modelEvents.ifPresent(model -> model.sendKeyReleasedEvent(keyEvent)));

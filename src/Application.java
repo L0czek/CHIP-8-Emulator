@@ -5,6 +5,12 @@ public class Application {
     private ModelInterface model = null;
     private ViewInterface view = null;
 
+    /**
+     *
+     * @param controller_ Application controller
+     * @param model_ Application model
+     * @param view_ Application view
+     */
     public Application(ControllerInterface controller_, ModelInterface model_, ViewInterface view_) {
         this.controller = controller_;
         this.model = model_;
