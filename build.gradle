@@ -1,0 +1,17 @@
+apply plugin: 'idea'
+apply plugin: 'java'
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'MainClass'
+        )
+    }
+}
+sourceSets {
+    main {
+        java {
+            srcDirs 'src'
+        }
+    }
+ }
